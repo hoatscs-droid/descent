@@ -73,33 +73,30 @@
       width: 180px;
       height: 180px;
       border-radius: 50%;
-      background: radial-gradient(circle at 45% 35%, rgba(255,255,255,0.2) 0%, rgba(121,183,168,0.28) 30%, rgba(121,183,168,0.11) 70%);
-      border: 1px solid rgba(255,255,255,0.12);
-      box-shadow:
-        0 0 60px rgba(121, 183, 168, 0.18),
-        0 0 120px rgba(121, 183, 168, 0.08),
-        inset 0 0 40px rgba(121, 183, 168, 0.06);
+      background: radial-gradient(circle at 45% 35%, rgba(255,255,255,0.22) 0%, rgba(121,183,168,0.32) 30%, rgba(121,183,168,0.12) 72%);
+      border: 1px solid rgba(255,255,255,0.14);
       display: grid;
       place-items: center;
-      animation: breathe 8s ease-in-out infinite;
+      animation: breathe 10s cubic-bezier(0.45, 0, 0.55, 1) infinite;
       transform-origin: center;
+      will-change: transform, box-shadow, opacity;
     }
     @keyframes breathe {
       0%, 100% {
-        transform: scale(0.98);
-        opacity: 0.86;
+        transform: scale(0.92);
+        opacity: 0.82;
         box-shadow:
-          0 0 50px rgba(121, 183, 168, 0.14),
-          0 0 100px rgba(121, 183, 168, 0.06),
-          inset 0 0 30px rgba(121, 183, 168, 0.04);
+          0 0 40px rgba(121, 183, 168, 0.12),
+          0 0 90px rgba(121, 183, 168, 0.05),
+          inset 0 0 24px rgba(121, 183, 168, 0.04);
       }
       50% {
-        transform: scale(1.05);
+        transform: scale(1.08);
         opacity: 1;
         box-shadow:
-          0 0 90px rgba(121, 183, 168, 0.22),
-          0 0 180px rgba(121, 183, 168, 0.10),
-          inset 0 0 50px rgba(121, 183, 168, 0.08);
+          0 0 110px rgba(121, 183, 168, 0.30),
+          0 0 220px rgba(121, 183, 168, 0.14),
+          inset 0 0 60px rgba(121, 183, 168, 0.10);
       }
     }
     .time { font-size: 1.7rem; font-weight: 600; letter-spacing: 0.03em; }
@@ -312,6 +309,17 @@
       grid-template-columns: 1fr auto;
       gap: 8px;
     }
+    #savePreset {
+      border: 1px solid rgba(121,183,168,0.55);
+      background: var(--accent-soft);
+      color: var(--text);
+      border-radius: 10px;
+      padding: 8px 14px;
+      font-weight: 600;
+      font-size: 0.92rem;
+      transition: background 200ms ease, border-color 200ms ease, color 200ms ease, transform 150ms ease;
+    }
+    #savePreset:active { transform: scale(0.98); filter: brightness(0.95); }
     .tinker-shell {
       gap: 12px;
       padding-left: 0;
@@ -600,8 +608,12 @@
           <input type="range" id="pulseDepth" min="0" max="0.6" step="0.01" value="0.10">
         </div>
         <div class="control-block">
-          <div class="row"><span>Pulse rate (Hz)</span><span id="pulseRateVal">0.20</span></div>
-          <input type="range" id="pulseRate" min="0.05" max="1" step="0.01" value="0.20">
+          <div class="row"><span>Tone pulse rate</span><span id="pulseToneRateVal">0.20 Hz</span></div>
+          <input type="range" id="pulseToneRate" min="0" max="1" step="0.001" value="0.273">
+        </div>
+        <div class="control-block">
+          <div class="row"><span>Noise pulse rate</span><span id="pulseNoiseRateVal">0.20 Hz</span></div>
+          <input type="range" id="pulseNoiseRate" min="0" max="1" step="0.001" value="0.273">
         </div>
         <div class="save-row">
           <input id="presetName" type="text" maxlength="24" placeholder="Preset name">
@@ -666,7 +678,7 @@
           oscA: { on: true, wave: "sine", pitch: 147, lowpass: 20000, pan: -1, volume: 0.7 },
           oscB: { on: true, wave: "sine", pitch: 153, lowpass: 20000, pan: 1, volume: 0.7 },
           noise: { on: true, type: "pink", width: 0.6, lowpass: 20000, level: 0.10 },
-          pulse: { depth: 0.10, rate: 0.20 }
+          pulse: { depth: 0.10, toneRate: 0.20, noiseRate: 0.20 }
         }
       };
 
@@ -732,8 +744,10 @@
         noiseLevelVal: document.getElementById("noiseLevelVal"),
         pulseDepth: document.getElementById("pulseDepth"),
         pulseDepthVal: document.getElementById("pulseDepthVal"),
-        pulseRate: document.getElementById("pulseRate"),
-        pulseRateVal: document.getElementById("pulseRateVal"),
+        pulseToneRate: document.getElementById("pulseToneRate"),
+        pulseToneRateVal: document.getElementById("pulseToneRateVal"),
+        pulseNoiseRate: document.getElementById("pulseNoiseRate"),
+        pulseNoiseRateVal: document.getElementById("pulseNoiseRateVal"),
         presetName: document.getElementById("presetName"),
         savePreset: document.getElementById("savePreset")
       };
@@ -788,7 +802,8 @@
         oscB: null,
         noise: null,
         noiseType: null,
-        pulseLfo: null,
+        pulseLfoOsc: null,
+        pulseLfoNoise: null,
         pulseAMOsc: null,
         pulseAMNoise: null
       };
@@ -823,8 +838,10 @@
           d.noise.level = clamp(src.noise.level, 0, 0.5, d.noise.level);
         }
         if (src.pulse && typeof src.pulse === "object") {
+          const legacyRate = typeof src.pulse.rate === "number" ? src.pulse.rate : 0.20;
           d.pulse.depth = clamp(src.pulse.depth, 0, 0.6, d.pulse.depth);
-          d.pulse.rate = clamp(src.pulse.rate, 0.05, 1, d.pulse.rate);
+          d.pulse.toneRate = clamp(src.pulse.toneRate, 0.05, 8, legacyRate);
+          d.pulse.noiseRate = clamp(src.pulse.noiseRate, 0.05, 8, legacyRate);
         }
         return d;
       }
@@ -862,7 +879,7 @@
           oscA: { on: true, wave: "sine", pitch: carrier - beat / 2, lowpass: 20000, pan: -1, volume: carrierLevel },
           oscB: { on: true, wave: "sine", pitch: carrier + beat / 2, lowpass: 20000, pan: 1, volume: carrierLevel },
           noise: { on: true, type: p.noiseType || "pink", width: 0.6, lowpass: 20000, level: p.noiseLevel != null ? p.noiseLevel : 0.10 },
-          pulse: { depth: p.amDepth != null ? p.amDepth : 0.10, rate: p.amRate != null ? p.amRate : 0.20 }
+          pulse: { depth: p.amDepth != null ? p.amDepth : 0.10, toneRate: p.amRate != null ? p.amRate : 0.20, noiseRate: p.amRate != null ? p.amRate : 0.20 }
         });
       }
 
@@ -984,7 +1001,22 @@
           audio.masterSession.gain.value = 0;
           audio.masterSession.connect(audio.userMaster).connect(audio.ctx.destination);
         }
-        if (audio.ctx.state === "suspended") await audio.ctx.resume();
+        try {
+          if (navigator.audioSession) navigator.audioSession.type = "playback";
+        } catch (e) {}
+        if (audio.ctx.state === "suspended" || audio.ctx.state === "interrupted") {
+          try { await audio.ctx.resume(); } catch (e) {}
+        }
+        if (audio.ctx.state !== "running") {
+          try {
+            const silent = audio.ctx.createBuffer(1, 1, 22050);
+            const src = audio.ctx.createBufferSource();
+            src.buffer = silent;
+            src.connect(audio.ctx.destination);
+            src.start(0);
+            await audio.ctx.resume();
+          } catch (e) {}
+        }
       }
 
       function stopCurrentSources(stopAt) {
@@ -1207,6 +1239,10 @@
         return min * Math.pow(max / min, Number(pos));
       }
 
+      const HZ_MIN = 0.05, HZ_MAX = 8;
+      const sliderToHz = function (s) { return HZ_MIN * Math.pow(HZ_MAX / HZ_MIN, Number(s)); };
+      const hzToSlider = function (hz) { return Math.log(hz / HZ_MIN) / Math.log(HZ_MAX / HZ_MIN); };
+
       function updateToggleButton(btn, on) {
         btn.textContent = on ? "On" : "Off";
         btn.classList.toggle("on", on);
@@ -1251,7 +1287,8 @@
           },
           pulse: {
             depth: Number(els.pulseDepth.value),
-            rate: Number(els.pulseRate.value)
+            toneRate: sliderToHz(els.pulseToneRate.value),
+            noiseRate: sliderToHz(els.pulseNoiseRate.value)
           }
         });
       }
@@ -1277,7 +1314,8 @@
         els.noiseLowpass.value = String(valueToLogSlider(t.noise.lowpass, 200, 20000));
         els.noiseLevel.value = String(t.noise.level);
         els.pulseDepth.value = String(t.pulse.depth);
-        els.pulseRate.value = String(t.pulse.rate);
+        els.pulseToneRate.value = String(hzToSlider(t.pulse.toneRate));
+        els.pulseNoiseRate.value = String(hzToSlider(t.pulse.noiseRate));
 
         updateToggleButton(els.oscAOn, t.oscA.on);
         updateToggleButton(els.oscBOn, t.oscB.on);
@@ -1298,7 +1336,8 @@
         els.noiseLowpassVal.textContent = Math.round(t.noise.lowpass).toString();
         els.noiseLevelVal.textContent = t.noise.level.toFixed(2);
         els.pulseDepthVal.textContent = t.pulse.depth.toFixed(2);
-        els.pulseRateVal.textContent = t.pulse.rate.toFixed(2);
+        els.pulseToneRateVal.textContent = t.pulse.toneRate.toFixed(2) + " Hz";
+        els.pulseNoiseRateVal.textContent = t.pulse.noiseRate.toFixed(2) + " Hz";
 
         if (t.oscA.on && t.oscB.on) {
           els.tBeatReadout.textContent = "Beat: " + Math.abs(t.oscA.pitch - t.oscB.pitch).toFixed(1) + " Hz";
@@ -1432,11 +1471,14 @@
         tinkerAudio.noise.crossGain.connect(tinkerAudio.noiseLevelGain).connect(tinkerAudio.noiseOut);
         tinkerAudio.noiseType = cfg.noise.type;
 
-        tinkerAudio.pulseLfo = ctx.createOscillator();
-        tinkerAudio.pulseLfo.type = "sine";
-        tinkerAudio.pulseLfo.frequency.value = cfg.pulse.rate;
-        tinkerAudio.pulseAMOsc = makeSharedPulseAM(ctx, tinkerAudio.oscMix, tinkerAudio.pulseLfo, cfg.pulse.depth);
-        tinkerAudio.pulseAMNoise = makeSharedPulseAM(ctx, tinkerAudio.noiseOut, tinkerAudio.pulseLfo, Math.min(0.6, cfg.pulse.depth * 1.05));
+        tinkerAudio.pulseLfoOsc = ctx.createOscillator();
+        tinkerAudio.pulseLfoOsc.type = "sine";
+        tinkerAudio.pulseLfoOsc.frequency.value = cfg.pulse.toneRate;
+        tinkerAudio.pulseLfoNoise = ctx.createOscillator();
+        tinkerAudio.pulseLfoNoise.type = "sine";
+        tinkerAudio.pulseLfoNoise.frequency.value = cfg.pulse.noiseRate;
+        tinkerAudio.pulseAMOsc = makeSharedPulseAM(ctx, tinkerAudio.oscMix, tinkerAudio.pulseLfoOsc, cfg.pulse.depth);
+        tinkerAudio.pulseAMNoise = makeSharedPulseAM(ctx, tinkerAudio.noiseOut, tinkerAudio.pulseLfoNoise, Math.min(0.6, cfg.pulse.depth * 1.05));
         tinkerAudio.pulseAMOsc.modGain.connect(tinkerAudio.out);
         tinkerAudio.pulseAMNoise.modGain.connect(tinkerAudio.out);
       }
@@ -1446,7 +1488,8 @@
         tinkerAudio.oscA.osc.start(t);
         tinkerAudio.oscB.osc.start(t);
         tinkerAudio.noise.source.start(t);
-        tinkerAudio.pulseLfo.start(t);
+        tinkerAudio.pulseLfoOsc.start(t);
+        tinkerAudio.pulseLfoNoise.start(t);
         tinkerAudio.active = true;
       }
 
@@ -1457,7 +1500,8 @@
         try { tinkerAudio.oscA && tinkerAudio.oscA.osc.stop(t); } catch (e) {}
         try { tinkerAudio.oscB && tinkerAudio.oscB.osc.stop(t); } catch (e) {}
         try { tinkerAudio.noise && tinkerAudio.noise.source.stop(t); } catch (e) {}
-        try { tinkerAudio.pulseLfo && tinkerAudio.pulseLfo.stop(t); } catch (e) {}
+        try { tinkerAudio.pulseLfoOsc && tinkerAudio.pulseLfoOsc.stop(t); } catch (e) {}
+        try { tinkerAudio.pulseLfoNoise && tinkerAudio.pulseLfoNoise.stop(t); } catch (e) {}
         window.setTimeout(function () {
           try { out && out.disconnect(); } catch (e) {}
           if (tinkerAudio.out !== out) return;
@@ -1470,7 +1514,8 @@
           tinkerAudio.oscB = null;
           tinkerAudio.noise = null;
           tinkerAudio.noiseType = null;
-          tinkerAudio.pulseLfo = null;
+          tinkerAudio.pulseLfoOsc = null;
+          tinkerAudio.pulseLfoNoise = null;
           tinkerAudio.pulseAMOsc = null;
           tinkerAudio.pulseAMNoise = null;
         }, Math.max(0, (t - audio.ctx.currentTime + 0.1) * 1000));
@@ -1500,6 +1545,21 @@
         const t = state.tinker;
         const oscA = tinkerAudio.oscA;
         const oscB = tinkerAudio.oscB;
+        ["oscA", "oscB"].forEach(function (key) {
+          const node = tinkerAudio[key];
+          const targetWave = t[key].wave;
+          if (node.osc.type !== targetWave) {
+            const now = audio.ctx.currentTime;
+            const target = t[key].on ? t[key].volume : 0;
+            node.gain.gain.cancelScheduledValues(now);
+            node.gain.gain.setValueAtTime(node.gain.gain.value, now);
+            node.gain.gain.linearRampToValueAtTime(0.0001, now + 0.01);
+            window.setTimeout(function () {
+              node.osc.type = targetWave;
+              rampParam(node.gain.gain, target, 0.1);
+            }, 12);
+          }
+        });
         rampParam(oscA.osc.frequency, t.oscA.pitch, 0.1);
         rampParam(oscA.lp.frequency, t.oscA.lowpass, 0.2);
         rampParam(oscA.pan.pan, t.oscA.pan, 0.2);
@@ -1515,7 +1575,8 @@
           rampParam(tinkerAudio.noise.sideToR.gain, -t.noise.width, 0.3);
         }
         rampParam(tinkerAudio.noiseLevelGain.gain, t.noise.on ? t.noise.level : 0, 0.2);
-        rampParam(tinkerAudio.pulseLfo.frequency, t.pulse.rate, 0.2);
+        rampParam(tinkerAudio.pulseLfoOsc.frequency, t.pulse.toneRate, 0.2);
+        rampParam(tinkerAudio.pulseLfoNoise.frequency, t.pulse.noiseRate, 0.2);
         rampParam(tinkerAudio.pulseAMOsc.depthAmp.gain, t.pulse.depth, 0.2);
         rampParam(tinkerAudio.pulseAMOsc.modGain.gain, 1 - t.pulse.depth, 0.2);
         const noiseDepth = Math.min(0.6, t.pulse.depth * 1.05);
@@ -1647,8 +1708,11 @@
       }
 
       document.addEventListener("visibilitychange", function () {
-        if (state.wakeLock !== null && document.visibilityState === "visible") {
-          acquireWakeLock();
+        if (document.visibilityState === "visible") {
+          try {
+            if (navigator.audioSession) navigator.audioSession.type = "playback";
+          } catch (e) {}
+          if (state.wakeLock !== null) acquireWakeLock();
         }
       });
 
@@ -2203,7 +2267,7 @@
           els.oscAPitch, els.oscALowpass, els.oscAPan, els.oscAVolume,
           els.oscBPitch, els.oscBLowpass, els.oscBPan, els.oscBVolume,
           els.noiseWidth, els.noiseLowpass, els.noiseLevel,
-          els.pulseDepth, els.pulseRate
+          els.pulseDepth, els.pulseToneRate, els.pulseNoiseRate
         ].forEach(function (el) {
           el.addEventListener("input", setTinkerFromUiAndApply);
         });
