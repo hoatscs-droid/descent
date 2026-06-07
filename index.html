@@ -129,7 +129,7 @@
       box-shadow: 0 0 0 1px rgba(121,183,168,0.20), 0 2px 14px rgba(121,183,168,0.05);
     }
     .panel {
-      background: rgba(255,255,255,0.03);
+      background: var(--panel);
       border: 1px solid rgba(255,255,255,0.08);
       border-radius: var(--radius);
       padding: 14px;
@@ -159,6 +159,15 @@
       box-shadow:
         0 0 0 1px rgba(121,183,168,0.28),
         0 6px 28px rgba(121,183,168,0.08);
+    }
+    .mine-tile {
+      background: #191920;
+    }
+    .mine-tile.sel {
+      background: #18231f;
+    }
+    .mine-actions button, .rename-actions button {
+      background: rgba(255,255,255,0.05);
     }
     .quiet-btn {
       justify-self: end;
@@ -208,6 +217,9 @@
       padding: 6px 10px;
       font-size: 0.78rem;
       transition: background 220ms ease, border-color 220ms ease, color 220ms ease, transform 150ms ease, box-shadow 220ms ease;
+    }
+    .mine-actions button, .rename-actions button {
+      background: rgba(255,255,255,0.05);
     }
     .tag {
       display: inline-flex;
@@ -426,6 +438,10 @@
       display: grid;
       gap: 12px;
     }
+    .pulse-divider {
+      border-top: 1px solid rgba(255,255,255,0.06);
+      padding-top: 12px;
+    }
   </style>
 </head>
 <body>
@@ -604,12 +620,16 @@
       </div>
       <div class="tinker-footer">
         <div class="control-block">
-          <div class="row"><span>Pulse depth</span><span id="pulseDepthVal">0.10</span></div>
-          <input type="range" id="pulseDepth" min="0" max="0.6" step="0.01" value="0.10">
+          <div class="row"><span>Tone pulse depth</span><span id="pulseToneDepthVal">0.10</span></div>
+          <input type="range" id="pulseToneDepth" min="0" max="0.6" step="0.01" value="0.10">
         </div>
         <div class="control-block">
           <div class="row"><span>Tone pulse rate</span><span id="pulseToneRateVal">0.20 Hz</span></div>
           <input type="range" id="pulseToneRate" min="0" max="1" step="0.001" value="0.273">
+        </div>
+        <div class="control-block pulse-divider">
+          <div class="row"><span>Noise pulse depth</span><span id="pulseNoiseDepthVal">0.10</span></div>
+          <input type="range" id="pulseNoiseDepth" min="0" max="0.6" step="0.01" value="0.10">
         </div>
         <div class="control-block">
           <div class="row"><span>Noise pulse rate</span><span id="pulseNoiseRateVal">0.20 Hz</span></div>
@@ -678,7 +698,7 @@
           oscA: { on: true, wave: "sine", pitch: 147, lowpass: 20000, pan: -1, volume: 0.7 },
           oscB: { on: true, wave: "sine", pitch: 153, lowpass: 20000, pan: 1, volume: 0.7 },
           noise: { on: true, type: "pink", width: 0.6, lowpass: 20000, level: 0.10 },
-          pulse: { depth: 0.10, toneRate: 0.20, noiseRate: 0.20 }
+          pulse: { toneDepth: 0.10, noiseDepth: 0.10, toneRate: 0.20, noiseRate: 0.20 }
         }
       };
 
@@ -742,10 +762,12 @@
         noiseLowpassVal: document.getElementById("noiseLowpassVal"),
         noiseLevel: document.getElementById("noiseLevel"),
         noiseLevelVal: document.getElementById("noiseLevelVal"),
-        pulseDepth: document.getElementById("pulseDepth"),
-        pulseDepthVal: document.getElementById("pulseDepthVal"),
+        pulseToneDepth: document.getElementById("pulseToneDepth"),
+        pulseToneDepthVal: document.getElementById("pulseToneDepthVal"),
         pulseToneRate: document.getElementById("pulseToneRate"),
         pulseToneRateVal: document.getElementById("pulseToneRateVal"),
+        pulseNoiseDepth: document.getElementById("pulseNoiseDepth"),
+        pulseNoiseDepthVal: document.getElementById("pulseNoiseDepthVal"),
         pulseNoiseRate: document.getElementById("pulseNoiseRate"),
         pulseNoiseRateVal: document.getElementById("pulseNoiseRateVal"),
         presetName: document.getElementById("presetName"),
@@ -839,7 +861,9 @@
         }
         if (src.pulse && typeof src.pulse === "object") {
           const legacyRate = typeof src.pulse.rate === "number" ? src.pulse.rate : 0.20;
-          d.pulse.depth = clamp(src.pulse.depth, 0, 0.6, d.pulse.depth);
+          const legacyDepth = typeof src.pulse.depth === "number" ? src.pulse.depth : 0.10;
+          d.pulse.toneDepth = clamp(src.pulse.toneDepth, 0, 0.6, legacyDepth);
+          d.pulse.noiseDepth = clamp(src.pulse.noiseDepth, 0, 0.6, Math.min(0.6, legacyDepth * 1.05));
           d.pulse.toneRate = clamp(src.pulse.toneRate, 0.05, 8, legacyRate);
           d.pulse.noiseRate = clamp(src.pulse.noiseRate, 0.05, 8, legacyRate);
         }
@@ -879,7 +903,12 @@
           oscA: { on: true, wave: "sine", pitch: carrier - beat / 2, lowpass: 20000, pan: -1, volume: carrierLevel },
           oscB: { on: true, wave: "sine", pitch: carrier + beat / 2, lowpass: 20000, pan: 1, volume: carrierLevel },
           noise: { on: true, type: p.noiseType || "pink", width: 0.6, lowpass: 20000, level: p.noiseLevel != null ? p.noiseLevel : 0.10 },
-          pulse: { depth: p.amDepth != null ? p.amDepth : 0.10, toneRate: p.amRate != null ? p.amRate : 0.20, noiseRate: p.amRate != null ? p.amRate : 0.20 }
+          pulse: {
+            toneDepth: p.amDepth != null ? p.amDepth : 0.10,
+            noiseDepth: p.amDepth != null ? Math.min(0.6, p.amDepth * 1.05) : 0.10,
+            toneRate: p.amRate != null ? p.amRate : 0.20,
+            noiseRate: p.amRate != null ? p.amRate : 0.20
+          }
         });
       }
 
@@ -1286,7 +1315,8 @@
             level: Number(els.noiseLevel.value)
           },
           pulse: {
-            depth: Number(els.pulseDepth.value),
+            toneDepth: Number(els.pulseToneDepth.value),
+            noiseDepth: Number(els.pulseNoiseDepth.value),
             toneRate: sliderToHz(els.pulseToneRate.value),
             noiseRate: sliderToHz(els.pulseNoiseRate.value)
           }
@@ -1313,8 +1343,9 @@
         els.noiseWidth.value = String(t.noise.width);
         els.noiseLowpass.value = String(valueToLogSlider(t.noise.lowpass, 200, 20000));
         els.noiseLevel.value = String(t.noise.level);
-        els.pulseDepth.value = String(t.pulse.depth);
+        els.pulseToneDepth.value = String(t.pulse.toneDepth);
         els.pulseToneRate.value = String(hzToSlider(t.pulse.toneRate));
+        els.pulseNoiseDepth.value = String(t.pulse.noiseDepth);
         els.pulseNoiseRate.value = String(hzToSlider(t.pulse.noiseRate));
 
         updateToggleButton(els.oscAOn, t.oscA.on);
@@ -1335,8 +1366,9 @@
         els.noiseWidthVal.textContent = t.noise.width.toFixed(2);
         els.noiseLowpassVal.textContent = Math.round(t.noise.lowpass).toString();
         els.noiseLevelVal.textContent = t.noise.level.toFixed(2);
-        els.pulseDepthVal.textContent = t.pulse.depth.toFixed(2);
+        els.pulseToneDepthVal.textContent = t.pulse.toneDepth.toFixed(2);
         els.pulseToneRateVal.textContent = t.pulse.toneRate.toFixed(2) + " Hz";
+        els.pulseNoiseDepthVal.textContent = t.pulse.noiseDepth.toFixed(2);
         els.pulseNoiseRateVal.textContent = t.pulse.noiseRate.toFixed(2) + " Hz";
 
         if (t.oscA.on && t.oscB.on) {
@@ -1477,8 +1509,8 @@
         tinkerAudio.pulseLfoNoise = ctx.createOscillator();
         tinkerAudio.pulseLfoNoise.type = "sine";
         tinkerAudio.pulseLfoNoise.frequency.value = cfg.pulse.noiseRate;
-        tinkerAudio.pulseAMOsc = makeSharedPulseAM(ctx, tinkerAudio.oscMix, tinkerAudio.pulseLfoOsc, cfg.pulse.depth);
-        tinkerAudio.pulseAMNoise = makeSharedPulseAM(ctx, tinkerAudio.noiseOut, tinkerAudio.pulseLfoNoise, Math.min(0.6, cfg.pulse.depth * 1.05));
+        tinkerAudio.pulseAMOsc = makeSharedPulseAM(ctx, tinkerAudio.oscMix, tinkerAudio.pulseLfoOsc, cfg.pulse.toneDepth);
+        tinkerAudio.pulseAMNoise = makeSharedPulseAM(ctx, tinkerAudio.noiseOut, tinkerAudio.pulseLfoNoise, cfg.pulse.noiseDepth);
         tinkerAudio.pulseAMOsc.modGain.connect(tinkerAudio.out);
         tinkerAudio.pulseAMNoise.modGain.connect(tinkerAudio.out);
       }
@@ -1577,11 +1609,10 @@
         rampParam(tinkerAudio.noiseLevelGain.gain, t.noise.on ? t.noise.level : 0, 0.2);
         rampParam(tinkerAudio.pulseLfoOsc.frequency, t.pulse.toneRate, 0.2);
         rampParam(tinkerAudio.pulseLfoNoise.frequency, t.pulse.noiseRate, 0.2);
-        rampParam(tinkerAudio.pulseAMOsc.depthAmp.gain, t.pulse.depth, 0.2);
-        rampParam(tinkerAudio.pulseAMOsc.modGain.gain, 1 - t.pulse.depth, 0.2);
-        const noiseDepth = Math.min(0.6, t.pulse.depth * 1.05);
-        rampParam(tinkerAudio.pulseAMNoise.depthAmp.gain, noiseDepth, 0.2);
-        rampParam(tinkerAudio.pulseAMNoise.modGain.gain, 1 - noiseDepth, 0.2);
+        rampParam(tinkerAudio.pulseAMOsc.depthAmp.gain, t.pulse.toneDepth, 0.2);
+        rampParam(tinkerAudio.pulseAMOsc.modGain.gain, 1 - t.pulse.toneDepth, 0.2);
+        rampParam(tinkerAudio.pulseAMNoise.depthAmp.gain, t.pulse.noiseDepth, 0.2);
+        rampParam(tinkerAudio.pulseAMNoise.modGain.gain, 1 - t.pulse.noiseDepth, 0.2);
       }
 
       function setTinkerWave(oscKey, wave) {
@@ -2267,7 +2298,7 @@
           els.oscAPitch, els.oscALowpass, els.oscAPan, els.oscAVolume,
           els.oscBPitch, els.oscBLowpass, els.oscBPan, els.oscBVolume,
           els.noiseWidth, els.noiseLowpass, els.noiseLevel,
-          els.pulseDepth, els.pulseToneRate, els.pulseNoiseRate
+          els.pulseToneDepth, els.pulseToneRate, els.pulseNoiseDepth, els.pulseNoiseRate
         ].forEach(function (el) {
           el.addEventListener("input", setTinkerFromUiAndApply);
         });
