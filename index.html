@@ -1089,12 +1089,19 @@
 
       function syncMediaSessionPosition(force) {
         if (!("mediaSession" in navigator) || typeof navigator.mediaSession.setPositionState !== "function") return;
-        if (!state.isPlaying || state.sessionIsInfinite) return;
+        if (!state.isPlaying) return;
+        if (state.sessionIsInfinite) {
+          if (force) {
+            try { navigator.mediaSession.setPositionState(); } catch (e) {}
+          }
+          return;
+        }
         const nowMs = performance.now();
         if (!force && nowMs - state.lastMediaPositionSyncMs < 4000) return;
-        state.lastMediaPositionSyncMs = nowMs;
         const duration = state.durationMin * 60;
         const elapsed = Math.min(duration, Math.max(0, (nowMs - state.sessionStartedAtPerfMs) / 1000));
+        if (!isFinite(duration) || duration <= 0 || !isFinite(elapsed) || elapsed < 0 || elapsed > duration) return;
+        state.lastMediaPositionSyncMs = nowMs;
         try {
           navigator.mediaSession.setPositionState({
             duration: duration,
@@ -1125,21 +1132,24 @@
         [
           ["play", function () {
             runMediaAction(async function () {
-              if (state.isPlaying) {
-                await ensureAudioContext();
-              } else {
+              await ensureAudioContext();
+              if (!state.isPlaying) {
                 await startSession();
               }
+              syncMediaSessionPlaybackState("playing");
+              syncMediaSessionPosition(true);
             });
           }],
           ["pause", function () {
             runMediaAction(async function () {
               if (state.isPlaying) await stopSession();
+              syncMediaSessionPlaybackState("paused");
             });
           }],
           ["stop", function () {
             runMediaAction(async function () {
               if (state.isPlaying) await stopSession();
+              syncMediaSessionPlaybackState("paused");
             });
           }]
         ].forEach(function (entry) {
@@ -1241,6 +1251,9 @@
             src.start(0);
             await audio.ctx.resume();
           } catch (e) {}
+        }
+        if (state.isPlaying && audio.ctx.state === "running") {
+          syncMediaSessionPlaybackState("playing");
         }
       }
 
@@ -2103,6 +2116,10 @@
             if (navigator.audioSession) navigator.audioSession.type = "playback";
           } catch (e) {}
           if (state.wakeLock !== null) acquireWakeLock();
+          if (state.isPlaying) {
+            syncMediaSessionPlaybackState("playing");
+            syncMediaSessionPosition(true);
+          }
         }
       });
 
