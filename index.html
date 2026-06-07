@@ -2371,7 +2371,22 @@
             state.durationMin = Number(b.dataset.min);
           }
           els.durationRow.querySelectorAll(".dur-btn").forEach(function (x) { x.classList.toggle("active", x === b); });
-          if (!state.isPlaying) els.timeReadout.textContent = state.durationMode === "infinite" ? "∞" : formatTime(state.durationMin * 60);
+          if (state.isPlaying) {
+            if (state.durationMode === "infinite") {
+              state.sessionIsInfinite = true;
+              state.endAtPerfMs = 0;
+            } else {
+              state.sessionIsInfinite = false;
+              state.endAtPerfMs = state.sessionStartedAtPerfMs + state.durationMin * 60 * 1000;
+              if (state.endAtPerfMs <= performance.now()) {
+                onSessionElapsed();
+                return;
+              }
+            }
+            syncMediaSessionPosition(true);
+          } else {
+            els.timeReadout.textContent = state.durationMode === "infinite" ? "∞" : formatTime(state.durationMin * 60);
+          }
           saveState();
         });
 
