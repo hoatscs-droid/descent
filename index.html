@@ -73,17 +73,31 @@
       width: 180px;
       height: 180px;
       border-radius: 50%;
-      background: radial-gradient(circle at 45% 35%, rgba(255,255,255,0.2) 0%, rgba(121,183,168,0.28) 30%, rgba(121,183,168,0.11) 70%);
-      border: 1px solid rgba(255,255,255,0.12);
+      background: radial-gradient(circle at 45% 35%, rgba(255,255,255,0.22) 0%, rgba(121,183,168,0.32) 30%, rgba(121,183,168,0.12) 72%);
+      border: 1px solid rgba(255,255,255,0.14);
       display: grid;
       place-items: center;
-      animation: breathe 8s ease-in-out infinite;
+      animation: breathe 10s cubic-bezier(0.45, 0, 0.55, 1) infinite;
       transform-origin: center;
+      will-change: transform, box-shadow, opacity;
     }
     @keyframes breathe {
-      0% { transform: scale(0.98); opacity: 0.86; }
-      50% { transform: scale(1.05); opacity: 1; }
-      100% { transform: scale(0.98); opacity: 0.86; }
+      0%, 100% {
+        transform: scale(0.92);
+        opacity: 0.82;
+        box-shadow:
+          0 0 40px rgba(121, 183, 168, 0.12),
+          0 0 90px rgba(121, 183, 168, 0.05),
+          inset 0 0 24px rgba(121, 183, 168, 0.04);
+      }
+      50% {
+        transform: scale(1.08);
+        opacity: 1;
+        box-shadow:
+          0 0 110px rgba(121, 183, 168, 0.30),
+          0 0 220px rgba(121, 183, 168, 0.14),
+          inset 0 0 60px rgba(121, 183, 168, 0.10);
+      }
     }
     .time { font-size: 1.7rem; font-weight: 600; letter-spacing: 0.03em; }
     .mode-tabs, .duration-row {
@@ -91,7 +105,7 @@
       gap: 8px;
     }
     .mode-tabs { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-    .duration-row { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+    .duration-row { grid-template-columns: repeat(6, minmax(0, 1fr)); }
     button {
       font: inherit;
       color: inherit;
@@ -104,14 +118,18 @@
       border-radius: 999px;
       padding: 10px 8px;
       font-size: 0.9rem;
+      transition: background 220ms ease, border-color 220ms ease, color 220ms ease, transform 150ms ease, box-shadow 220ms ease;
     }
     .active {
       color: var(--text);
       border-color: rgba(121,183,168,0.55);
       background: var(--accent-soft);
     }
+    .tab.active, .dur-btn.active {
+      box-shadow: 0 0 0 1px rgba(121,183,168,0.20), 0 2px 14px rgba(121,183,168,0.05);
+    }
     .panel {
-      background: rgba(255,255,255,0.03);
+      background: var(--panel);
       border: 1px solid rgba(255,255,255,0.08);
       border-radius: var(--radius);
       padding: 14px;
@@ -131,10 +149,95 @@
       border-radius: 14px;
       padding: 14px;
       min-height: 88px;
+      transition: background 220ms ease, border-color 220ms ease, color 220ms ease, transform 150ms ease, box-shadow 220ms ease;
     }
     .tile strong { display: block; font-size: 1rem; color: var(--text); }
     .tile span { display: block; color: var(--muted); font-size: 0.84rem; margin-top: 6px; line-height: 1.35; }
-    .tile.sel { border-color: rgba(121,183,168,0.6); background: var(--accent-soft); }
+    .tile.sel {
+      border-color: rgba(121,183,168,0.6);
+      background: var(--accent-soft);
+      box-shadow:
+        0 0 0 1px rgba(121,183,168,0.28),
+        0 6px 28px rgba(121,183,168,0.08);
+    }
+    .mine-tile.sel {
+      background: #18231f;
+    }
+    .quiet-btn {
+      justify-self: end;
+      border: 0;
+      background: transparent;
+      color: var(--muted);
+      padding: 4px 2px;
+      font-size: 0.82rem;
+      text-decoration: underline;
+      text-decoration-color: rgba(255,255,255,0.18);
+      transition: background 220ms ease, border-color 220ms ease, color 220ms ease, transform 150ms ease, box-shadow 220ms ease;
+    }
+    .mine-tile {
+      display: grid;
+      gap: 10px;
+      position: relative;
+      background: #191920;
+    }
+    .mine-tile::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 14px;
+      bottom: 14px;
+      width: 2px;
+      background: rgba(121,183,168,0.5);
+      border-radius: 2px;
+    }
+    .mine-title {
+      border: 0;
+      background: transparent;
+      color: var(--text);
+      padding: 0;
+      text-align: left;
+      font-weight: 600;
+      font-size: 1rem;
+    }
+    .mine-actions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .mine-actions button, .rename-actions button, #cancelEdit {
+      border: 1px solid rgba(255,255,255,0.12);
+      background: rgba(255,255,255,0.03);
+      color: var(--muted);
+      border-radius: 999px;
+      padding: 6px 10px;
+      font-size: 0.78rem;
+      transition: background 220ms ease, border-color 220ms ease, color 220ms ease, transform 150ms ease, box-shadow 220ms ease;
+    }
+    .mine-actions button, .rename-actions button {
+      background: rgba(255,255,255,0.05);
+    }
+    .tag {
+      display: inline-flex;
+      width: fit-content;
+      color: var(--muted);
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 999px;
+      padding: 2px 7px;
+      font-size: 0.7rem;
+      line-height: 1.3;
+    }
+    .edit-banner {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      border: 1px solid rgba(121,183,168,0.28);
+      background: rgba(121,183,168,0.09);
+      border-radius: 12px;
+      padding: 10px;
+      color: var(--muted);
+      font-size: 0.86rem;
+    }
     .controls {
       display: grid;
       gap: 12px;
@@ -156,6 +259,26 @@
       border-radius: 10px;
       padding: 8px;
     }
+    input[type="range"] {
+      -webkit-appearance: none;
+      height: 24px;
+      background: transparent;
+      transition: background 220ms ease;
+    }
+    input[type="range"]::-webkit-slider-runnable-track {
+      height: 4px;
+      background: rgba(255,255,255,0.08);
+      border-radius: 999px;
+    }
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: var(--accent);
+      margin-top: -7px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+    }
     .play {
       width: 100%;
       border: 0;
@@ -163,11 +286,18 @@
       padding: 14px 12px;
       font-size: 1.03rem;
       font-weight: 600;
-      background: var(--accent);
+      background: linear-gradient(180deg, rgba(255,255,255,0.07), rgba(255,255,255,0)), var(--accent);
       color: #111;
       margin-top: 2px;
+      box-shadow: 0 8px 24px rgba(121,183,168,0.20), inset 0 1px 0 rgba(255,255,255,0.15);
+      transition: transform 150ms ease, filter 200ms ease, box-shadow 220ms ease;
     }
-    .play.stop { background: var(--danger); color: #fff; }
+    .play:active { transform: scale(0.985); filter: brightness(0.94); }
+    .play.stop {
+      background: linear-gradient(180deg, rgba(255,255,255,0.07), rgba(255,255,255,0)), var(--danger);
+      color: #fff;
+      box-shadow: 0 8px 24px rgba(201,111,111,0.20), inset 0 1px 0 rgba(255,255,255,0.15);
+    }
     .small { color: var(--muted); font-size: 0.8rem; line-height: 1.4; }
     .journey-progress {
       height: 8px;
@@ -185,6 +315,127 @@
       display: grid;
       grid-template-columns: 1fr auto;
       gap: 8px;
+    }
+    #savePreset {
+      border: 1px solid rgba(121,183,168,0.55);
+      background: var(--accent-soft);
+      color: var(--text);
+      border-radius: 10px;
+      padding: 8px 14px;
+      font-weight: 600;
+      font-size: 0.92rem;
+      transition: background 200ms ease, border-color 200ms ease, color 200ms ease, transform 150ms ease;
+    }
+    #savePreset:active { transform: scale(0.98); filter: brightness(0.95); }
+    .tinker-shell {
+      gap: 12px;
+      padding-left: 0;
+      padding-right: 0;
+      overflow: hidden;
+    }
+    .tinker-header, .tinker-footer, .edit-banner {
+      margin-left: 14px;
+      margin-right: 14px;
+    }
+    .tinker-header {
+      display: grid;
+      gap: 8px;
+    }
+    .tinker-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: start;
+      gap: 12px;
+    }
+    .tinker-title {
+      color: var(--text);
+      font-weight: 600;
+      font-size: 1rem;
+    }
+    .beat-readout {
+      color: var(--text);
+      font-family: "SF Mono", "Menlo", monospace;
+      font-size: 0.86rem;
+      margin-top: 4px;
+    }
+    .beat-readout.muted { color: var(--muted); }
+    .tinker-dots {
+      display: flex;
+      justify-content: center;
+      gap: 8px;
+    }
+    .tinker-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 999px;
+      border: 0;
+      padding: 0;
+      background: rgba(255,255,255,0.18);
+    }
+    .tinker-dot.active { background: var(--accent); }
+    .tinker-swipe {
+      display: flex;
+      overflow-x: auto;
+      scroll-snap-type: x mandatory;
+      -webkit-overflow-scrolling: touch;
+      scroll-behavior: smooth;
+    }
+    .tinker-swipe::-webkit-scrollbar { display: none; }
+    .tinker-pane {
+      flex: 0 0 100%;
+      scroll-snap-align: center;
+      padding: 0 14px;
+      display: grid;
+      gap: 12px;
+    }
+    .pane-card {
+      display: grid;
+      gap: 12px;
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 14px;
+      padding: 14px;
+      background: rgba(255,255,255,0.025);
+    }
+    .pane-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+    }
+    .pane-head strong {
+      font-size: 1rem;
+    }
+    .toggle-pill, .wave-btn, .type-btn {
+      border: 1px solid rgba(255,255,255,0.12);
+      background: rgba(255,255,255,0.03);
+      color: var(--muted);
+      border-radius: 999px;
+      padding: 7px 10px;
+      font-size: 0.8rem;
+      transition: background 220ms ease, border-color 220ms ease, color 220ms ease, transform 150ms ease, box-shadow 220ms ease;
+    }
+    .toggle-pill.on, .wave-btn.active, .type-btn.active {
+      color: var(--text);
+      border-color: rgba(121,183,168,0.55);
+      background: var(--accent-soft);
+    }
+    .wave-grid, .type-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 8px;
+    }
+    .type-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .control-block {
+      display: grid;
+      gap: 6px;
+    }
+    .tinker-footer {
+      display: grid;
+      gap: 12px;
+    }
+    .pulse-divider {
+      border-top: 1px solid rgba(255,255,255,0.06);
+      padding-top: 12px;
     }
   </style>
 </head>
@@ -211,6 +462,7 @@
     </div>
 
     <section id="mode-sit" class="panel mode-panel">
+      <button class="quiet-btn" id="resetSit">Reset</button>
       <div class="tiles" id="sitTiles"></div>
       <div id="mineWrap" class="hidden">
         <div class="small">Mine</div>
@@ -225,6 +477,7 @@
     </section>
 
     <section id="mode-explore" class="panel mode-panel hidden">
+      <button class="quiet-btn" id="resetExplore">Reset</button>
       <div class="tiles explore" id="exploreTiles"></div>
       <div class="row">
         <span>Journey descent</span>
@@ -243,39 +496,140 @@
       <input type="range" id="exploreNoiseLevel" min="0" max="0.3" step="0.01" value="0.10">
     </section>
 
-    <section id="mode-tinker" class="panel mode-panel hidden">
-      <div class="controls">
-        <div class="row"><span>Carrier (Hz)</span><span id="tCarrierVal">150</span></div>
-        <input type="range" id="tCarrier" min="80" max="400" step="1" value="150">
+    <section id="mode-tinker" class="panel mode-panel tinker-shell hidden">
+      <div class="tinker-header">
+        <div class="tinker-top">
+          <div>
+            <div class="tinker-title">Tinker</div>
+            <div class="beat-readout" id="tBeatReadout">Beat: 6.0 Hz</div>
+          </div>
+          <button class="quiet-btn" id="resetTinker">Reset</button>
+        </div>
+        <div class="tinker-dots" id="tinkerDots" aria-label="Tinker panes">
+          <button class="tinker-dot active" data-pane="0" aria-label="Oscillator A"></button>
+          <button class="tinker-dot" data-pane="1" aria-label="Oscillator B"></button>
+          <button class="tinker-dot" data-pane="2" aria-label="Noise"></button>
+        </div>
+      </div>
+      <div class="edit-banner hidden" id="editBanner">
+        <span id="editTitle">Editing preset</span>
+        <button id="cancelEdit">Cancel</button>
+      </div>
+      <div class="tinker-swipe" id="tinkerSwipe">
+        <article class="tinker-pane" data-pane="0">
+          <div class="pane-card">
+            <div class="pane-head">
+              <strong>Osc A</strong>
+              <button class="toggle-pill on" id="oscAOn">On</button>
+            </div>
+            <div class="control-block">
+              <div class="row"><span>Wave</span></div>
+              <div class="wave-grid" data-osc="oscA">
+                <button class="wave-btn active" data-wave="sine">Sine</button>
+                <button class="wave-btn" data-wave="triangle">Tri</button>
+                <button class="wave-btn" data-wave="sawtooth">Saw</button>
+                <button class="wave-btn" data-wave="square">Square</button>
+              </div>
+            </div>
+            <div class="control-block">
+              <div class="row"><span>Pitch (Hz)</span><span id="oscAPitchVal">147.00</span></div>
+              <input type="range" id="oscAPitch" min="0" max="1" step="0.001" value="0">
+            </div>
+            <div class="control-block">
+              <div class="row"><span>Lowpass (Hz)</span><span id="oscALowpassVal">20000</span></div>
+              <input type="range" id="oscALowpass" min="0" max="1" step="0.001" value="1">
+            </div>
+            <div class="control-block">
+              <div class="row"><span>Pan</span><span id="oscAPanVal">-1.00</span></div>
+              <input type="range" id="oscAPan" min="-1" max="1" step="0.01" value="-1">
+            </div>
+            <div class="control-block">
+              <div class="row"><span>Volume</span><span id="oscAVolumeVal">0.70</span></div>
+              <input type="range" id="oscAVolume" min="0" max="1" step="0.01" value="0.70">
+            </div>
+          </div>
+        </article>
 
-        <div class="row"><span>Beat (Hz)</span><span id="tBeatVal">6.0</span></div>
-        <input type="range" id="tBeat" min="0.5" max="40" step="0.1" value="6">
+        <article class="tinker-pane" data-pane="1">
+          <div class="pane-card">
+            <div class="pane-head">
+              <strong>Osc B</strong>
+              <button class="toggle-pill on" id="oscBOn">On</button>
+            </div>
+            <div class="control-block">
+              <div class="row"><span>Wave</span></div>
+              <div class="wave-grid" data-osc="oscB">
+                <button class="wave-btn active" data-wave="sine">Sine</button>
+                <button class="wave-btn" data-wave="triangle">Tri</button>
+                <button class="wave-btn" data-wave="sawtooth">Saw</button>
+                <button class="wave-btn" data-wave="square">Square</button>
+              </div>
+            </div>
+            <div class="control-block">
+              <div class="row"><span>Pitch (Hz)</span><span id="oscBPitchVal">153.00</span></div>
+              <input type="range" id="oscBPitch" min="0" max="1" step="0.001" value="0">
+            </div>
+            <div class="control-block">
+              <div class="row"><span>Lowpass (Hz)</span><span id="oscBLowpassVal">20000</span></div>
+              <input type="range" id="oscBLowpass" min="0" max="1" step="0.001" value="1">
+            </div>
+            <div class="control-block">
+              <div class="row"><span>Pan</span><span id="oscBPanVal">1.00</span></div>
+              <input type="range" id="oscBPan" min="-1" max="1" step="0.01" value="1">
+            </div>
+            <div class="control-block">
+              <div class="row"><span>Volume</span><span id="oscBVolumeVal">0.70</span></div>
+              <input type="range" id="oscBVolume" min="0" max="1" step="0.01" value="0.70">
+            </div>
+          </div>
+        </article>
 
-        <div class="row"><span>Left / Right</span><span id="tLrReadout">147.0 / 153.0 Hz</span></div>
-
-        <div class="row"><span>Noise type</span></div>
-        <select id="tNoiseType">
-          <option value="off">Off</option>
-          <option value="white">White</option>
-          <option value="pink" selected>Pink</option>
-          <option value="brown">Brown</option>
-        </select>
-
-        <div class="row"><span>Noise level</span><span id="tNoiseLevelVal">0.10</span></div>
-        <input type="range" id="tNoiseLevel" min="0" max="0.4" step="0.01" value="0.10">
-
-        <div class="row"><span>AM depth</span><span id="tDepthVal">0.10</span></div>
-        <input type="range" id="tDepth" min="0" max="0.6" step="0.01" value="0.10">
-
-        <div class="row"><span>AM rate (Hz)</span><span id="tRateVal">0.20</span></div>
-        <input type="range" id="tRate" min="0.05" max="1" step="0.01" value="0.20">
-
-        <div class="row"><span>Carrier level</span><span id="tCarrierLevelVal">0.70</span></div>
-        <input type="range" id="tCarrierLevel" min="0" max="1" step="0.01" value="0.70">
-
-        <div class="row"><span>Noise layer level</span><span id="tNoiseLayerLevelVal">0.10</span></div>
-        <input type="range" id="tNoiseLayerLevel" min="0" max="0.4" step="0.01" value="0.10">
-
+        <article class="tinker-pane" data-pane="2">
+          <div class="pane-card">
+            <div class="pane-head">
+              <strong>Noise</strong>
+              <button class="toggle-pill on" id="noiseOn">On</button>
+            </div>
+            <div class="control-block">
+              <div class="row"><span>Type</span></div>
+              <div class="type-grid" id="noiseTypeGrid">
+                <button class="type-btn" data-type="white">White</button>
+                <button class="type-btn active" data-type="pink">Pink</button>
+                <button class="type-btn" data-type="brown">Brown</button>
+              </div>
+            </div>
+            <div class="control-block">
+              <div class="row"><span>Stereo width</span><span id="noiseWidthVal">0.60</span></div>
+              <input type="range" id="noiseWidth" min="0" max="1" step="0.01" value="0.60">
+            </div>
+            <div class="control-block">
+              <div class="row"><span>Lowpass (Hz)</span><span id="noiseLowpassVal">20000</span></div>
+              <input type="range" id="noiseLowpass" min="0" max="1" step="0.001" value="1">
+            </div>
+            <div class="control-block">
+              <div class="row"><span>Volume</span><span id="noiseLevelVal">0.10</span></div>
+              <input type="range" id="noiseLevel" min="0" max="0.5" step="0.01" value="0.10">
+            </div>
+          </div>
+        </article>
+      </div>
+      <div class="tinker-footer">
+        <div class="control-block">
+          <div class="row"><span>Tone pulse depth</span><span id="pulseToneDepthVal">0.10</span></div>
+          <input type="range" id="pulseToneDepth" min="0" max="0.6" step="0.01" value="0.10">
+        </div>
+        <div class="control-block">
+          <div class="row"><span>Tone pulse rate</span><span id="pulseToneRateVal">0.20 Hz</span></div>
+          <input type="range" id="pulseToneRate" min="0" max="1" step="0.001" value="0.273">
+        </div>
+        <div class="control-block pulse-divider">
+          <div class="row"><span>Noise pulse depth</span><span id="pulseNoiseDepthVal">0.10</span></div>
+          <input type="range" id="pulseNoiseDepth" min="0" max="0.6" step="0.01" value="0.10">
+        </div>
+        <div class="control-block">
+          <div class="row"><span>Noise pulse rate</span><span id="pulseNoiseRateVal">0.20 Hz</span></div>
+          <input type="range" id="pulseNoiseRate" min="0" max="1" step="0.001" value="0.273">
+        </div>
         <div class="save-row">
           <input id="presetName" type="text" maxlength="24" placeholder="Preset name">
           <button id="savePreset">Save</button>
@@ -294,6 +648,7 @@
         <button class="dur-btn" data-min="15">15m</button>
         <button class="dur-btn" data-min="20">20m</button>
         <button class="dur-btn" data-min="30">30m</button>
+        <button class="dur-btn" data-min="infinite">∞</button>
       </div>
 
       <button class="play" id="playBtn">Play</button>
@@ -327,6 +682,21 @@
         glideSec: 20
       };
 
+      const DEFAULTS = {
+        masterVol: 0.55,
+        durationMin: 10,
+        durationMode: "timed",
+        infiniteJourneySec: 20 * 60,
+        sitPreset: "calm",
+        explorePreset: "f3",
+        tinker: {
+          oscA: { on: true, wave: "sine", pitch: 147, lowpass: 20000, pan: -1, volume: 0.7 },
+          oscB: { on: true, wave: "sine", pitch: 153, lowpass: 20000, pan: 1, volume: 0.7 },
+          noise: { on: true, type: "pink", width: 0.6, lowpass: 20000, level: 0.10 },
+          pulse: { toneDepth: 0.10, noiseDepth: 0.10, toneRate: 0.20, noiseRate: 0.20 }
+        }
+      };
+
       const els = {
         modeTabs: document.getElementById("modeTabs"),
         panels: document.querySelectorAll(".mode-panel"),
@@ -349,25 +719,52 @@
         sitNoiseOn: document.getElementById("sitNoiseOn"),
         sitNoiseLevel: document.getElementById("sitNoiseLevel"),
         sitNoiseLevelVal: document.getElementById("sitNoiseLevelVal"),
+        resetSit: document.getElementById("resetSit"),
         exploreNoiseOn: document.getElementById("exploreNoiseOn"),
         exploreNoiseLevel: document.getElementById("exploreNoiseLevel"),
         exploreNoiseLevelVal: document.getElementById("exploreNoiseLevelVal"),
-        tCarrier: document.getElementById("tCarrier"),
-        tCarrierVal: document.getElementById("tCarrierVal"),
-        tBeat: document.getElementById("tBeat"),
-        tBeatVal: document.getElementById("tBeatVal"),
-        tLrReadout: document.getElementById("tLrReadout"),
-        tNoiseType: document.getElementById("tNoiseType"),
-        tNoiseLevel: document.getElementById("tNoiseLevel"),
-        tNoiseLevelVal: document.getElementById("tNoiseLevelVal"),
-        tDepth: document.getElementById("tDepth"),
-        tDepthVal: document.getElementById("tDepthVal"),
-        tRate: document.getElementById("tRate"),
-        tRateVal: document.getElementById("tRateVal"),
-        tCarrierLevel: document.getElementById("tCarrierLevel"),
-        tCarrierLevelVal: document.getElementById("tCarrierLevelVal"),
-        tNoiseLayerLevel: document.getElementById("tNoiseLayerLevel"),
-        tNoiseLayerLevelVal: document.getElementById("tNoiseLayerLevelVal"),
+        resetExplore: document.getElementById("resetExplore"),
+        resetTinker: document.getElementById("resetTinker"),
+        editBanner: document.getElementById("editBanner"),
+        editTitle: document.getElementById("editTitle"),
+        cancelEdit: document.getElementById("cancelEdit"),
+        tBeatReadout: document.getElementById("tBeatReadout"),
+        tinkerSwipe: document.getElementById("tinkerSwipe"),
+        tinkerDots: document.getElementById("tinkerDots"),
+        oscAOn: document.getElementById("oscAOn"),
+        oscAPitch: document.getElementById("oscAPitch"),
+        oscAPitchVal: document.getElementById("oscAPitchVal"),
+        oscALowpass: document.getElementById("oscALowpass"),
+        oscALowpassVal: document.getElementById("oscALowpassVal"),
+        oscAPan: document.getElementById("oscAPan"),
+        oscAPanVal: document.getElementById("oscAPanVal"),
+        oscAVolume: document.getElementById("oscAVolume"),
+        oscAVolumeVal: document.getElementById("oscAVolumeVal"),
+        oscBOn: document.getElementById("oscBOn"),
+        oscBPitch: document.getElementById("oscBPitch"),
+        oscBPitchVal: document.getElementById("oscBPitchVal"),
+        oscBLowpass: document.getElementById("oscBLowpass"),
+        oscBLowpassVal: document.getElementById("oscBLowpassVal"),
+        oscBPan: document.getElementById("oscBPan"),
+        oscBPanVal: document.getElementById("oscBPanVal"),
+        oscBVolume: document.getElementById("oscBVolume"),
+        oscBVolumeVal: document.getElementById("oscBVolumeVal"),
+        noiseOn: document.getElementById("noiseOn"),
+        noiseTypeGrid: document.getElementById("noiseTypeGrid"),
+        noiseWidth: document.getElementById("noiseWidth"),
+        noiseWidthVal: document.getElementById("noiseWidthVal"),
+        noiseLowpass: document.getElementById("noiseLowpass"),
+        noiseLowpassVal: document.getElementById("noiseLowpassVal"),
+        noiseLevel: document.getElementById("noiseLevel"),
+        noiseLevelVal: document.getElementById("noiseLevelVal"),
+        pulseToneDepth: document.getElementById("pulseToneDepth"),
+        pulseToneDepthVal: document.getElementById("pulseToneDepthVal"),
+        pulseToneRate: document.getElementById("pulseToneRate"),
+        pulseToneRateVal: document.getElementById("pulseToneRateVal"),
+        pulseNoiseDepth: document.getElementById("pulseNoiseDepth"),
+        pulseNoiseDepthVal: document.getElementById("pulseNoiseDepthVal"),
+        pulseNoiseRate: document.getElementById("pulseNoiseRate"),
+        pulseNoiseRateVal: document.getElementById("pulseNoiseRateVal"),
         presetName: document.getElementById("presetName"),
         savePreset: document.getElementById("savePreset")
       };
@@ -377,14 +774,21 @@
         selectedSit: "calm",
         selectedExplore: "f3",
         durationMin: 10,
+        durationMode: "timed",
         masterVol: 0.55,
         isPlaying: false,
+        sessionIsInfinite: false,
+        sessionStartedAtPerfMs: 0,
         endAtPerfMs: 0,
         timerRaf: 0,
         journeyRaf: 0,
         audioSessionSet: false,
         hasShownHeadphonesHint: false,
         customPresets: [],
+        editingPresetId: null,
+        renamingPresetId: null,
+        activeEngine: null,
+        tinker: null,
         wakeLock: null
       };
 
@@ -398,9 +802,110 @@
         carrierAM: null,
         noiseAM: null,
         shimmerAM: null,
+        shimmerGain: null,
         noiseSource: null,
-        noiseType: null
+        noiseSourceGain: null,
+        noiseType: null,
+        transitionMarkers: []
       };
+
+      const tinkerAudio = {
+        active: false,
+        out: null,
+        oscMix: null,
+        noiseOut: null,
+        noiseLevelGain: null,
+        oscA: null,
+        oscB: null,
+        noise: null,
+        noiseType: null,
+        pulseLfoOsc: null,
+        pulseLfoNoise: null,
+        pulseAMOsc: null,
+        pulseAMNoise: null
+      };
+
+      function cloneTinkerDefaults() {
+        return JSON.parse(JSON.stringify(DEFAULTS.tinker));
+      }
+
+      function clamp(num, min, max, fallback) {
+        const n = Number(num);
+        if (!Number.isFinite(n)) return fallback;
+        return Math.max(min, Math.min(max, n));
+      }
+
+      function normalizeTinkerState(input) {
+        const d = cloneTinkerDefaults();
+        const src = input && typeof input === "object" ? input : {};
+        ["oscA", "oscB"].forEach(function (key) {
+          const o = src[key] || {};
+          d[key].on = typeof o.on === "boolean" ? o.on : d[key].on;
+          d[key].wave = ["sine", "triangle", "sawtooth", "square"].includes(o.wave) ? o.wave : d[key].wave;
+          d[key].pitch = clamp(o.pitch, 20, 2000, d[key].pitch);
+          d[key].lowpass = clamp(o.lowpass, 200, 20000, d[key].lowpass);
+          d[key].pan = clamp(o.pan, -1, 1, d[key].pan);
+          d[key].volume = clamp(o.volume, 0, 1, d[key].volume);
+        });
+        if (src.noise && typeof src.noise === "object") {
+          d.noise.on = typeof src.noise.on === "boolean" ? src.noise.on : d.noise.on;
+          d.noise.type = ["white", "pink", "brown"].includes(src.noise.type) ? src.noise.type : d.noise.type;
+          d.noise.width = clamp(src.noise.width, 0, 1, d.noise.width);
+          d.noise.lowpass = clamp(src.noise.lowpass, 200, 20000, d.noise.lowpass);
+          d.noise.level = clamp(src.noise.level, 0, 0.5, d.noise.level);
+        }
+        if (src.pulse && typeof src.pulse === "object") {
+          const legacyRate = typeof src.pulse.rate === "number" ? src.pulse.rate : 0.20;
+          const legacyDepth = typeof src.pulse.depth === "number" ? src.pulse.depth : 0.10;
+          d.pulse.toneDepth = clamp(src.pulse.toneDepth, 0, 0.6, legacyDepth);
+          d.pulse.noiseDepth = clamp(src.pulse.noiseDepth, 0, 0.6, Math.min(0.6, legacyDepth * 1.05));
+          d.pulse.toneRate = clamp(src.pulse.toneRate, 0.05, 8, legacyRate);
+          d.pulse.noiseRate = clamp(src.pulse.noiseRate, 0.05, 8, legacyRate);
+        }
+        return d;
+      }
+
+      function isSchemaV2(p) {
+        return p && Number(p.schemaVersion) >= 2 && p.oscA && p.oscB && p.noise && p.pulse;
+      }
+
+      function isLegacyPreset(p) {
+        return p && (!p.schemaVersion || Number(p.schemaVersion) < 2);
+      }
+
+      function normalizePreset(p) {
+        if (!p || !p.id || !p.name) return null;
+        if (isSchemaV2(p)) {
+          return {
+            id: p.id,
+            name: p.name,
+            schemaVersion: 2,
+            oscA: normalizeTinkerState(p).oscA,
+            oscB: normalizeTinkerState(p).oscB,
+            noise: normalizeTinkerState(p).noise,
+            pulse: normalizeTinkerState(p).pulse
+          };
+        }
+        if (typeof p.carrier === "number" && typeof p.beat === "number") return p;
+        return null;
+      }
+
+      function legacyToTinkerPreset(p) {
+        const carrier = p.carrier != null ? p.carrier : 150;
+        const beat = p.beat != null ? p.beat : 6;
+        const carrierLevel = p.carrierLevel != null ? p.carrierLevel : 0.70;
+        return normalizeTinkerState({
+          oscA: { on: true, wave: "sine", pitch: carrier - beat / 2, lowpass: 20000, pan: -1, volume: carrierLevel },
+          oscB: { on: true, wave: "sine", pitch: carrier + beat / 2, lowpass: 20000, pan: 1, volume: carrierLevel },
+          noise: { on: true, type: p.noiseType || "pink", width: 0.6, lowpass: 20000, level: p.noiseLevel != null ? p.noiseLevel : 0.10 },
+          pulse: {
+            toneDepth: p.amDepth != null ? p.amDepth : 0.10,
+            noiseDepth: p.amDepth != null ? Math.min(0.6, p.amDepth * 1.05) : 0.10,
+            toneRate: p.amRate != null ? p.amRate : 0.20,
+            noiseRate: p.amRate != null ? p.amRate : 0.20
+          }
+        });
+      }
 
       function saveState() {
         const payload = {
@@ -408,24 +913,33 @@
           selectedExplore: state.selectedExplore,
           mode: state.mode,
           durationMin: state.durationMin,
+          durationMode: state.durationMode,
           masterVol: state.masterVol,
-          customPresets: state.customPresets
+          customPresets: state.customPresets,
+          tinker: state.tinker
         };
-        localStorage.setItem("descentState", JSON.stringify(payload));
+        try {
+          localStorage.setItem("descentState", JSON.stringify(payload));
+        } catch (e) {}
       }
 
       function loadState() {
-        const raw = localStorage.getItem("descentState");
-        if (!raw) return;
         try {
+          const raw = localStorage.getItem("descentState");
+          if (!raw) return;
           const s = JSON.parse(raw);
           if (s.selectedSit) state.selectedSit = s.selectedSit;
           if (s.selectedExplore) state.selectedExplore = s.selectedExplore;
           if (s.mode) state.mode = s.mode;
           if ([5,10,15,20,30].includes(s.durationMin)) state.durationMin = s.durationMin;
+          if (s.durationMode === "infinite" || s.durationMode === "timed") state.durationMode = s.durationMode;
           if (typeof s.masterVol === "number") state.masterVol = Math.max(0, Math.min(1, s.masterVol));
-          if (Array.isArray(s.customPresets)) state.customPresets = s.customPresets;
-        } catch (e) {}
+          state.tinker = normalizeTinkerState(s.tinker);
+          state.customPresets = Array.isArray(s.customPresets) ? s.customPresets.map(normalizePreset).filter(Boolean) : [];
+        } catch (e) {
+          state.customPresets = [];
+          state.tinker = cloneTinkerDefaults();
+        }
       }
 
       function setupAudioSessionHint() {
@@ -511,11 +1025,27 @@
           audio.masterSession.gain.value = 0;
           audio.masterSession.connect(audio.userMaster).connect(audio.ctx.destination);
         }
-        if (audio.ctx.state === "suspended") await audio.ctx.resume();
+        try {
+          if (navigator.audioSession) navigator.audioSession.type = "playback";
+        } catch (e) {}
+        if (audio.ctx.state === "suspended" || audio.ctx.state === "interrupted") {
+          try { await audio.ctx.resume(); } catch (e) {}
+        }
+        if (audio.ctx.state !== "running") {
+          try {
+            const silent = audio.ctx.createBuffer(1, 1, 22050);
+            const src = audio.ctx.createBufferSource();
+            src.buffer = silent;
+            src.connect(audio.ctx.destination);
+            src.start(0);
+            await audio.ctx.resume();
+          } catch (e) {}
+        }
       }
 
       function stopCurrentSources(stopAt) {
         const t = stopAt != null ? stopAt : (audio.ctx ? audio.ctx.currentTime + 0.05 : 0);
+        cancelTransitionMarkers();
         if (audio.binaural) {
           try { audio.binaural.left.stop(t); } catch (e) {}
           try { audio.binaural.right.stop(t); } catch (e) {}
@@ -547,29 +1077,27 @@
         audio.noiseGain = noiseBase;
 
         audio.carrierAM = makeAM(ctx, audio.binaural.merger, { rate: cfg.amRate, depth: cfg.amDepth });
-        let carrierOut = audio.carrierAM.modGain;
+        audio.carrierAM.modGain.connect(carrierLevel).connect(audio.masterSession);
 
-        if (cfg.shimmer40) {
-          audio.shimmerAM = makeAM(ctx, carrierOut, { rate: 40, depth: 0.18 });
-          audio.shimmerAM.depthAmp.gain.value = 0.18;
-          audio.shimmerAM.modGain.gain.value = 0.82;
-          carrierOut = audio.shimmerAM.modGain;
-        } else {
-          audio.shimmerAM = null;
-        }
-
-        carrierOut.connect(carrierLevel).connect(audio.masterSession);
+        audio.shimmerAM = makeAM(ctx, audio.carrierAM.modGain, { rate: 40, depth: 0.18 });
+        audio.shimmerGain = ctx.createGain();
+        audio.shimmerGain.gain.value = cfg.shimmer40 ? 0.18 : 0;
+        audio.shimmerAM.modGain.connect(audio.shimmerGain).connect(audio.masterSession);
 
         if (cfg.noiseType && cfg.noiseType !== "off") {
           const src = ctx.createBufferSource();
           src.buffer = makeNoiseBuffer(ctx, cfg.noiseType, 2);
           src.loop = true;
+          const sourceGain = ctx.createGain();
+          sourceGain.gain.value = 1;
           audio.noiseSource = src;
+          audio.noiseSourceGain = sourceGain;
           audio.noiseType = cfg.noiseType;
           audio.noiseAM = makeAM(ctx, src, { rate: Math.max(0.05, cfg.amRate * 0.8), depth: Math.min(0.6, cfg.amDepth * 1.05) });
-          audio.noiseAM.modGain.connect(noiseBase).connect(audio.masterSession);
+          audio.noiseAM.modGain.connect(sourceGain).connect(noiseBase).connect(audio.masterSession);
         } else {
           audio.noiseSource = null;
+          audio.noiseSourceGain = null;
           audio.noiseAM = null;
           audio.noiseType = "off";
         }
@@ -584,6 +1112,561 @@
         if (audio.noiseSource) audio.noiseSource.start(t);
       }
 
+      function rampParam(param, value, seconds) {
+        if (!audio.ctx || !param) return;
+        const now = audio.ctx.currentTime;
+        const end = now + (seconds || 0.6);
+        if (typeof param.cancelAndHoldAtTime === "function") {
+          param.cancelAndHoldAtTime(now);
+        } else {
+          const current = param.value;
+          param.cancelScheduledValues(now);
+          param.setValueAtTime(current, now);
+        }
+        param.linearRampToValueAtTime(value, end);
+      }
+
+      function getSitPreset(id) {
+        return SIT_PRESETS.concat(state.customPresets).find(function (x) { return x.id === id; }) || SIT_PRESETS[0];
+      }
+
+      function getExplorePreset(id) {
+        return EXPLORE_PRESETS.find(function (x) { return x.id === id; }) || EXPLORE_PRESETS[0];
+      }
+
+      function createNoiseChain(type, cfg, sourceGainValue) {
+        const ctx = audio.ctx;
+        const src = ctx.createBufferSource();
+        const sourceGain = ctx.createGain();
+        src.buffer = makeNoiseBuffer(ctx, type, 2);
+        src.loop = true;
+        sourceGain.gain.value = sourceGainValue;
+        const am = makeAM(ctx, src, {
+          rate: Math.max(0.05, cfg.amRate * 0.8),
+          depth: Math.min(0.6, cfg.amDepth * 1.05)
+        });
+        am.modGain.connect(sourceGain).connect(audio.noiseGain);
+        return { src: src, am: am, sourceGain: sourceGain };
+      }
+
+      function stopRetiredNoise(src, am, atTime) {
+        if (src) {
+          try { src.stop(atTime); } catch (e) {}
+        }
+        if (am) {
+          try { am.lfo.stop(atTime); } catch (e) {}
+        }
+      }
+
+      function cancelTransitionMarkers() {
+        if (!audio.ctx || !audio.transitionMarkers.length) return;
+        const now = audio.ctx.currentTime;
+        audio.transitionMarkers.forEach(function (m) {
+          try {
+            m.gain.gain.cancelScheduledValues(now);
+            m.gain.gain.setValueAtTime(0.0001, now);
+          } catch (e) {}
+          try { m.osc.stop(Math.max(now + 0.01, m.atTime + 0.31)); } catch (e) {}
+        });
+        audio.transitionMarkers = [];
+      }
+
+      function crossfadeNoiseType(newType, targetLevel, cfg) {
+        if (!audio.ctx || !audio.noiseGain) return;
+        if (newType === audio.noiseType) {
+          rampParam(audio.noiseGain.gain, targetLevel, 0.5);
+          return;
+        }
+
+        const ctx = audio.ctx;
+        const now = ctx.currentTime;
+        const oldSource = audio.noiseSource;
+        const oldAM = audio.noiseAM;
+        const oldSourceGain = audio.noiseSourceGain;
+
+        if (newType === "off") {
+          rampParam(audio.noiseGain.gain, 0, 0.5);
+          if (oldSourceGain) rampParam(oldSourceGain.gain, 0, 0.5);
+          stopRetiredNoise(oldSource, oldAM, now + 0.6);
+          audio.noiseSource = null;
+          audio.noiseSourceGain = null;
+          audio.noiseAM = null;
+          audio.noiseType = "off";
+          return;
+        }
+
+        const next = createNoiseChain(newType, cfg, 0);
+        next.src.start(now);
+        next.sourceGain.gain.setValueAtTime(0, now);
+        next.sourceGain.gain.linearRampToValueAtTime(1, now + 0.5);
+        if (oldSourceGain) rampParam(oldSourceGain.gain, 0, 0.5);
+        rampParam(audio.noiseGain.gain, targetLevel, 0.5);
+        stopRetiredNoise(oldSource, oldAM, now + 0.6);
+
+        audio.noiseSource = next.src;
+        audio.noiseSourceGain = next.sourceGain;
+        audio.noiseAM = next.am;
+        audio.noiseType = newType;
+      }
+
+      function applyConfigLive(cfg) {
+        if (!state.isPlaying || !audio.ctx || !audio.binaural) return;
+        cancelTransitionMarkers();
+        const left = cfg.carrier - cfg.beat / 2;
+        const right = cfg.carrier + cfg.beat / 2;
+        const targetNoise = cfg.noiseOn ? cfg.noiseLevel : 0;
+
+        rampParam(audio.binaural.left.frequency, left, 0.6);
+        rampParam(audio.binaural.right.frequency, right, 0.6);
+        if (audio.carrierAM) {
+          rampParam(audio.carrierAM.depthAmp.gain, cfg.amDepth, 0.6);
+          rampParam(audio.carrierAM.modGain.gain, 1 - cfg.amDepth, 0.6);
+          rampParam(audio.carrierAM.lfo.frequency, cfg.amRate, 0.6);
+        }
+        if (audio.noiseAM) {
+          rampParam(audio.noiseAM.depthAmp.gain, Math.min(0.6, cfg.amDepth * 1.05), 0.6);
+          rampParam(audio.noiseAM.modGain.gain, 1 - Math.min(0.6, cfg.amDepth * 1.05), 0.6);
+          rampParam(audio.noiseAM.lfo.frequency, Math.max(0.05, cfg.amRate * 0.8), 0.6);
+        }
+        if (audio.carrierGain) rampParam(audio.carrierGain.gain, cfg.carrierLevel, 0.6);
+        if (audio.shimmerGain) rampParam(audio.shimmerGain.gain, cfg.shimmer40 ? 0.18 : 0, 0.6);
+
+        if (cfg.noiseType !== audio.noiseType) {
+          crossfadeNoiseType(cfg.noiseType, targetNoise, cfg);
+        } else if (audio.noiseGain) {
+          rampParam(audio.noiseGain.gain, targetNoise, 0.6);
+        }
+      }
+
+      function setMasterVolume(value) {
+        state.masterVol = value;
+        els.masterVolume.value = String(value);
+        els.masterVal.textContent = value.toFixed(2);
+        if (audio.userMaster && audio.ctx) {
+          rampParam(audio.userMaster.gain, value, 0.5);
+        }
+        saveState();
+      }
+
+      function syncSitNoiseForPreset(p) {
+        const level = isSchemaV2(p) ? p.noise.level : (p.noiseLevel != null ? p.noiseLevel : 0.10);
+        if (isSchemaV2(p)) els.sitNoiseOn.checked = !!p.noise.on;
+        els.sitNoiseLevel.value = String(level);
+        els.sitNoiseLevelVal.textContent = Number(level).toFixed(2);
+      }
+
+      function valueToLogSlider(value, min, max) {
+        return Math.log(value / min) / Math.log(max / min);
+      }
+
+      function logSliderToValue(pos, min, max) {
+        return min * Math.pow(max / min, Number(pos));
+      }
+
+      const HZ_MIN = 0.05, HZ_MAX = 8;
+      const sliderToHz = function (s) { return HZ_MIN * Math.pow(HZ_MAX / HZ_MIN, Number(s)); };
+      const hzToSlider = function (hz) { return Math.log(hz / HZ_MIN) / Math.log(HZ_MAX / HZ_MIN); };
+
+      function updateToggleButton(btn, on) {
+        btn.textContent = on ? "On" : "Off";
+        btn.classList.toggle("on", on);
+      }
+
+      function setWaveButtons(oscKey, wave) {
+        document.querySelectorAll('.wave-grid[data-osc="' + oscKey + '"] .wave-btn').forEach(function (btn) {
+          btn.classList.toggle("active", btn.dataset.wave === wave);
+        });
+      }
+
+      function setNoiseTypeButtons(type) {
+        els.noiseTypeGrid.querySelectorAll(".type-btn").forEach(function (btn) {
+          btn.classList.toggle("active", btn.dataset.type === type);
+        });
+      }
+
+      function readTinkerStateFromUi() {
+        return normalizeTinkerState({
+          oscA: {
+            on: state.tinker.oscA.on,
+            wave: state.tinker.oscA.wave,
+            pitch: logSliderToValue(els.oscAPitch.value, 20, 2000),
+            lowpass: logSliderToValue(els.oscALowpass.value, 200, 20000),
+            pan: Number(els.oscAPan.value),
+            volume: Number(els.oscAVolume.value)
+          },
+          oscB: {
+            on: state.tinker.oscB.on,
+            wave: state.tinker.oscB.wave,
+            pitch: logSliderToValue(els.oscBPitch.value, 20, 2000),
+            lowpass: logSliderToValue(els.oscBLowpass.value, 200, 20000),
+            pan: Number(els.oscBPan.value),
+            volume: Number(els.oscBVolume.value)
+          },
+          noise: {
+            on: state.tinker.noise.on,
+            type: state.tinker.noise.type,
+            width: Number(els.noiseWidth.value),
+            lowpass: logSliderToValue(els.noiseLowpass.value, 200, 20000),
+            level: Number(els.noiseLevel.value)
+          },
+          pulse: {
+            toneDepth: Number(els.pulseToneDepth.value),
+            noiseDepth: Number(els.pulseNoiseDepth.value),
+            toneRate: sliderToHz(els.pulseToneRate.value),
+            noiseRate: sliderToHz(els.pulseNoiseRate.value)
+          }
+        });
+      }
+
+      function setTinkerControlsFromPreset(p) {
+        state.tinker = normalizeTinkerState(p);
+        updateTinkerReadouts();
+        if (state.isPlaying && state.activeEngine === "tinker") applyTinkerStateLive();
+        saveState();
+      }
+
+      function updateTinkerReadouts() {
+        const t = state.tinker || cloneTinkerDefaults();
+        els.oscAPitch.value = String(valueToLogSlider(t.oscA.pitch, 20, 2000));
+        els.oscALowpass.value = String(valueToLogSlider(t.oscA.lowpass, 200, 20000));
+        els.oscAPan.value = String(t.oscA.pan);
+        els.oscAVolume.value = String(t.oscA.volume);
+        els.oscBPitch.value = String(valueToLogSlider(t.oscB.pitch, 20, 2000));
+        els.oscBLowpass.value = String(valueToLogSlider(t.oscB.lowpass, 200, 20000));
+        els.oscBPan.value = String(t.oscB.pan);
+        els.oscBVolume.value = String(t.oscB.volume);
+        els.noiseWidth.value = String(t.noise.width);
+        els.noiseLowpass.value = String(valueToLogSlider(t.noise.lowpass, 200, 20000));
+        els.noiseLevel.value = String(t.noise.level);
+        els.pulseToneDepth.value = String(t.pulse.toneDepth);
+        els.pulseToneRate.value = String(hzToSlider(t.pulse.toneRate));
+        els.pulseNoiseDepth.value = String(t.pulse.noiseDepth);
+        els.pulseNoiseRate.value = String(hzToSlider(t.pulse.noiseRate));
+
+        updateToggleButton(els.oscAOn, t.oscA.on);
+        updateToggleButton(els.oscBOn, t.oscB.on);
+        updateToggleButton(els.noiseOn, t.noise.on);
+        setWaveButtons("oscA", t.oscA.wave);
+        setWaveButtons("oscB", t.oscB.wave);
+        setNoiseTypeButtons(t.noise.type);
+
+        els.oscAPitchVal.textContent = t.oscA.pitch.toFixed(2);
+        els.oscALowpassVal.textContent = Math.round(t.oscA.lowpass).toString();
+        els.oscAPanVal.textContent = t.oscA.pan.toFixed(2);
+        els.oscAVolumeVal.textContent = t.oscA.volume.toFixed(2);
+        els.oscBPitchVal.textContent = t.oscB.pitch.toFixed(2);
+        els.oscBLowpassVal.textContent = Math.round(t.oscB.lowpass).toString();
+        els.oscBPanVal.textContent = t.oscB.pan.toFixed(2);
+        els.oscBVolumeVal.textContent = t.oscB.volume.toFixed(2);
+        els.noiseWidthVal.textContent = t.noise.width.toFixed(2);
+        els.noiseLowpassVal.textContent = Math.round(t.noise.lowpass).toString();
+        els.noiseLevelVal.textContent = t.noise.level.toFixed(2);
+        els.pulseToneDepthVal.textContent = t.pulse.toneDepth.toFixed(2);
+        els.pulseToneRateVal.textContent = t.pulse.toneRate.toFixed(2) + " Hz";
+        els.pulseNoiseDepthVal.textContent = t.pulse.noiseDepth.toFixed(2);
+        els.pulseNoiseRateVal.textContent = t.pulse.noiseRate.toFixed(2) + " Hz";
+
+        if (t.oscA.on && t.oscB.on) {
+          els.tBeatReadout.textContent = "Beat: " + Math.abs(t.oscA.pitch - t.oscB.pitch).toFixed(1) + " Hz";
+          els.tBeatReadout.classList.remove("muted");
+        } else {
+          els.tBeatReadout.textContent = "Beat: -- Hz";
+          els.tBeatReadout.classList.add("muted");
+        }
+      }
+
+      function setTinkerFromUiAndApply() {
+        state.tinker = readTinkerStateFromUi();
+        updateTinkerReadouts();
+        if (state.isPlaying && state.activeEngine === "tinker") applyTinkerStateLive();
+        saveState();
+      }
+
+      function makeTinkerOsc(ctx) {
+        const osc = ctx.createOscillator();
+        const lp = ctx.createBiquadFilter();
+        const pan = ctx.createStereoPanner();
+        const gain = ctx.createGain();
+        osc.type = "sine";
+        osc.frequency.value = 147;
+        lp.type = "lowpass";
+        lp.frequency.value = 20000;
+        pan.pan.value = -1;
+        gain.gain.value = 0.7;
+        osc.connect(lp).connect(pan).connect(gain);
+        return { osc: osc, lp: lp, pan: pan, gain: gain };
+      }
+
+      function makeStereoNoiseBuffer(ctx, type) {
+        const left = makeNoiseBuffer(ctx, type, 2);
+        const right = makeNoiseBuffer(ctx, type, 2);
+        const out = ctx.createBuffer(2, left.length, ctx.sampleRate);
+        out.copyToChannel(left.getChannelData(0), 0);
+        out.copyToChannel(right.getChannelData(0), 1);
+        return out;
+      }
+
+      function makeTinkerNoiseChain(ctx, type, width, lowpass) {
+        const src = ctx.createBufferSource();
+        src.buffer = makeStereoNoiseBuffer(ctx, type);
+        src.loop = true;
+
+        const splitter = ctx.createChannelSplitter(2);
+        const merger = ctx.createChannelMerger(2);
+        const midBus = ctx.createGain();
+        const sideBus = ctx.createGain();
+        const lMid = ctx.createGain();
+        const rMid = ctx.createGain();
+        const lSide = ctx.createGain();
+        const rSide = ctx.createGain();
+        const midToL = ctx.createGain();
+        const midToR = ctx.createGain();
+        const sideToL = ctx.createGain();
+        const sideToR = ctx.createGain();
+        const lp = ctx.createBiquadFilter();
+        const crossGain = ctx.createGain();
+
+        lMid.gain.value = 0.5;
+        rMid.gain.value = 0.5;
+        lSide.gain.value = 0.5;
+        rSide.gain.value = -0.5;
+        midToL.gain.value = 1;
+        midToR.gain.value = 1;
+        sideToL.gain.value = width;
+        sideToR.gain.value = -width;
+        lp.type = "lowpass";
+        lp.frequency.value = lowpass;
+        crossGain.gain.value = 1;
+
+        src.connect(splitter);
+        splitter.connect(lMid, 0).connect(midBus);
+        splitter.connect(rMid, 1).connect(midBus);
+        splitter.connect(lSide, 0).connect(sideBus);
+        splitter.connect(rSide, 1).connect(sideBus);
+        midBus.connect(midToL).connect(merger, 0, 0);
+        sideBus.connect(sideToL).connect(merger, 0, 0);
+        midBus.connect(midToR).connect(merger, 0, 1);
+        sideBus.connect(sideToR).connect(merger, 0, 1);
+        merger.connect(lp).connect(crossGain);
+
+        return {
+          source: src,
+          lp: lp,
+          crossGain: crossGain,
+          sideToL: sideToL,
+          sideToR: sideToR
+        };
+      }
+
+      function makeSharedPulseAM(ctx, signalNode, lfo, depth) {
+        const depthAmp = ctx.createGain();
+        const modGain = ctx.createGain();
+        depthAmp.gain.value = depth;
+        modGain.gain.value = 1 - depth;
+        signalNode.connect(modGain);
+        lfo.connect(depthAmp).connect(modGain.gain);
+        return { modGain: modGain, depthAmp: depthAmp };
+      }
+
+      function configureTinkerOsc(node, cfg) {
+        node.osc.type = cfg.wave;
+        node.osc.frequency.value = cfg.pitch;
+        node.lp.frequency.value = cfg.lowpass;
+        node.pan.pan.value = cfg.pan;
+        node.gain.gain.value = cfg.on ? cfg.volume : 0;
+      }
+
+      function buildTinkerGraph(cfg) {
+        const ctx = audio.ctx;
+        tinkerAudio.out = ctx.createGain();
+        tinkerAudio.out.gain.value = 1;
+        tinkerAudio.out.connect(audio.masterSession);
+
+        tinkerAudio.oscMix = ctx.createGain();
+        tinkerAudio.noiseOut = ctx.createGain();
+        tinkerAudio.noiseLevelGain = ctx.createGain();
+        tinkerAudio.noiseLevelGain.gain.value = cfg.noise.on ? cfg.noise.level : 0;
+
+        tinkerAudio.oscA = makeTinkerOsc(ctx);
+        tinkerAudio.oscB = makeTinkerOsc(ctx);
+        configureTinkerOsc(tinkerAudio.oscA, cfg.oscA);
+        configureTinkerOsc(tinkerAudio.oscB, cfg.oscB);
+        tinkerAudio.oscA.gain.connect(tinkerAudio.oscMix);
+        tinkerAudio.oscB.gain.connect(tinkerAudio.oscMix);
+
+        tinkerAudio.noise = makeTinkerNoiseChain(ctx, cfg.noise.type, cfg.noise.width, cfg.noise.lowpass);
+        tinkerAudio.noise.crossGain.connect(tinkerAudio.noiseLevelGain).connect(tinkerAudio.noiseOut);
+        tinkerAudio.noiseType = cfg.noise.type;
+
+        tinkerAudio.pulseLfoOsc = ctx.createOscillator();
+        tinkerAudio.pulseLfoOsc.type = "sine";
+        tinkerAudio.pulseLfoOsc.frequency.value = cfg.pulse.toneRate;
+        tinkerAudio.pulseLfoNoise = ctx.createOscillator();
+        tinkerAudio.pulseLfoNoise.type = "sine";
+        tinkerAudio.pulseLfoNoise.frequency.value = cfg.pulse.noiseRate;
+        tinkerAudio.pulseAMOsc = makeSharedPulseAM(ctx, tinkerAudio.oscMix, tinkerAudio.pulseLfoOsc, cfg.pulse.toneDepth);
+        tinkerAudio.pulseAMNoise = makeSharedPulseAM(ctx, tinkerAudio.noiseOut, tinkerAudio.pulseLfoNoise, cfg.pulse.noiseDepth);
+        tinkerAudio.pulseAMOsc.modGain.connect(tinkerAudio.out);
+        tinkerAudio.pulseAMNoise.modGain.connect(tinkerAudio.out);
+      }
+
+      function startTinkerGraph() {
+        const t = audio.ctx.currentTime;
+        tinkerAudio.oscA.osc.start(t);
+        tinkerAudio.oscB.osc.start(t);
+        tinkerAudio.noise.source.start(t);
+        tinkerAudio.pulseLfoOsc.start(t);
+        tinkerAudio.pulseLfoNoise.start(t);
+        tinkerAudio.active = true;
+      }
+
+      function stopTinkerGraph(stopAt) {
+        const t = stopAt != null ? stopAt : (audio.ctx ? audio.ctx.currentTime + 0.05 : 0);
+        if (!tinkerAudio.active && !tinkerAudio.out) return;
+        const out = tinkerAudio.out;
+        try { tinkerAudio.oscA && tinkerAudio.oscA.osc.stop(t); } catch (e) {}
+        try { tinkerAudio.oscB && tinkerAudio.oscB.osc.stop(t); } catch (e) {}
+        try { tinkerAudio.noise && tinkerAudio.noise.source.stop(t); } catch (e) {}
+        try { tinkerAudio.pulseLfoOsc && tinkerAudio.pulseLfoOsc.stop(t); } catch (e) {}
+        try { tinkerAudio.pulseLfoNoise && tinkerAudio.pulseLfoNoise.stop(t); } catch (e) {}
+        window.setTimeout(function () {
+          try { out && out.disconnect(); } catch (e) {}
+          if (tinkerAudio.out !== out) return;
+          tinkerAudio.active = false;
+          tinkerAudio.out = null;
+          tinkerAudio.oscMix = null;
+          tinkerAudio.noiseOut = null;
+          tinkerAudio.noiseLevelGain = null;
+          tinkerAudio.oscA = null;
+          tinkerAudio.oscB = null;
+          tinkerAudio.noise = null;
+          tinkerAudio.noiseType = null;
+          tinkerAudio.pulseLfoOsc = null;
+          tinkerAudio.pulseLfoNoise = null;
+          tinkerAudio.pulseAMOsc = null;
+          tinkerAudio.pulseAMNoise = null;
+        }, Math.max(0, (t - audio.ctx.currentTime + 0.1) * 1000));
+      }
+
+      function crossfadeTinkerNoiseType(type) {
+        if (!tinkerAudio.noiseLevelGain || type === tinkerAudio.noiseType) return;
+        const ctx = audio.ctx;
+        const now = ctx.currentTime;
+        const old = tinkerAudio.noise;
+        const next = makeTinkerNoiseChain(ctx, type, state.tinker.noise.width, state.tinker.noise.lowpass);
+        next.crossGain.gain.value = 0;
+        next.crossGain.connect(tinkerAudio.noiseLevelGain);
+        next.source.start(now);
+        next.crossGain.gain.setValueAtTime(0, now);
+        next.crossGain.gain.linearRampToValueAtTime(1, now + 0.5);
+        old.crossGain.gain.cancelScheduledValues(now);
+        old.crossGain.gain.setValueAtTime(old.crossGain.gain.value, now);
+        old.crossGain.gain.linearRampToValueAtTime(0, now + 0.5);
+        try { old.source.stop(now + 0.6); } catch (e) {}
+        tinkerAudio.noise = next;
+        tinkerAudio.noiseType = type;
+      }
+
+      function applyTinkerStateLive() {
+        if (!audio.ctx || !tinkerAudio.active) return;
+        const t = state.tinker;
+        const oscA = tinkerAudio.oscA;
+        const oscB = tinkerAudio.oscB;
+        ["oscA", "oscB"].forEach(function (key) {
+          const node = tinkerAudio[key];
+          const targetWave = t[key].wave;
+          if (node.osc.type !== targetWave) {
+            const now = audio.ctx.currentTime;
+            const target = t[key].on ? t[key].volume : 0;
+            node.gain.gain.cancelScheduledValues(now);
+            node.gain.gain.setValueAtTime(node.gain.gain.value, now);
+            node.gain.gain.linearRampToValueAtTime(0.0001, now + 0.01);
+            window.setTimeout(function () {
+              node.osc.type = targetWave;
+              rampParam(node.gain.gain, target, 0.1);
+            }, 12);
+          }
+        });
+        rampParam(oscA.osc.frequency, t.oscA.pitch, 0.1);
+        rampParam(oscA.lp.frequency, t.oscA.lowpass, 0.2);
+        rampParam(oscA.pan.pan, t.oscA.pan, 0.2);
+        rampParam(oscA.gain.gain, t.oscA.on ? t.oscA.volume : 0, 0.2);
+        rampParam(oscB.osc.frequency, t.oscB.pitch, 0.1);
+        rampParam(oscB.lp.frequency, t.oscB.lowpass, 0.2);
+        rampParam(oscB.pan.pan, t.oscB.pan, 0.2);
+        rampParam(oscB.gain.gain, t.oscB.on ? t.oscB.volume : 0, 0.2);
+        if (t.noise.type !== tinkerAudio.noiseType) crossfadeTinkerNoiseType(t.noise.type);
+        if (tinkerAudio.noise) {
+          rampParam(tinkerAudio.noise.lp.frequency, t.noise.lowpass, 0.2);
+          rampParam(tinkerAudio.noise.sideToL.gain, t.noise.width, 0.3);
+          rampParam(tinkerAudio.noise.sideToR.gain, -t.noise.width, 0.3);
+        }
+        rampParam(tinkerAudio.noiseLevelGain.gain, t.noise.on ? t.noise.level : 0, 0.2);
+        rampParam(tinkerAudio.pulseLfoOsc.frequency, t.pulse.toneRate, 0.2);
+        rampParam(tinkerAudio.pulseLfoNoise.frequency, t.pulse.noiseRate, 0.2);
+        rampParam(tinkerAudio.pulseAMOsc.depthAmp.gain, t.pulse.toneDepth, 0.2);
+        rampParam(tinkerAudio.pulseAMOsc.modGain.gain, 1 - t.pulse.toneDepth, 0.2);
+        rampParam(tinkerAudio.pulseAMNoise.depthAmp.gain, t.pulse.noiseDepth, 0.2);
+        rampParam(tinkerAudio.pulseAMNoise.modGain.gain, 1 - t.pulse.noiseDepth, 0.2);
+      }
+
+      function setTinkerWave(oscKey, wave) {
+        state.tinker[oscKey].wave = wave;
+        updateTinkerReadouts();
+        saveState();
+        if (!state.isPlaying || state.activeEngine !== "tinker" || !tinkerAudio[oscKey]) return;
+        const node = tinkerAudio[oscKey];
+        const target = state.tinker[oscKey].on ? state.tinker[oscKey].volume : 0;
+        const now = audio.ctx.currentTime;
+        node.gain.gain.cancelScheduledValues(now);
+        node.gain.gain.setValueAtTime(node.gain.gain.value, now);
+        node.gain.gain.linearRampToValueAtTime(0.0001, now + 0.01);
+        window.setTimeout(function () {
+          node.osc.type = wave;
+          rampParam(node.gain.gain, target, 0.1);
+        }, 12);
+      }
+
+      function shouldUseTinkerEngine() {
+        if (state.mode === "tinker") return true;
+        if (state.mode === "sit") return isSchemaV2(getSitPreset(state.selectedSit));
+        return false;
+      }
+
+      function getTinkerStartConfig() {
+        if (state.mode === "sit") {
+          const p = getSitPreset(state.selectedSit);
+          if (isSchemaV2(p)) return normalizeTinkerState(p);
+        }
+        return normalizeTinkerState(state.tinker);
+      }
+
+      function finishStoppedState() {
+        state.isPlaying = false;
+        state.sessionIsInfinite = false;
+        state.activeEngine = null;
+        cancelAnimationFrame(state.timerRaf);
+        state.timerRaf = 0;
+        els.playBtn.textContent = "Play";
+        els.playBtn.classList.remove("stop");
+        releaseWakeLock();
+      }
+
+      function fadeOutActiveEngine(seconds) {
+        if (!audio.ctx || !state.isPlaying) return;
+        const fade = seconds || 1;
+        const now = audio.ctx.currentTime;
+        audio.masterSession.gain.cancelScheduledValues(now);
+        audio.masterSession.gain.setValueAtTime(audio.masterSession.gain.value, now);
+        audio.masterSession.gain.linearRampToValueAtTime(0.0001, now + fade);
+        if (state.activeEngine === "tinker") {
+          stopTinkerGraph(now + fade + 0.1);
+        } else {
+          stopCurrentSources(now + fade + 0.1);
+        }
+        finishStoppedState();
+      }
+
       function playTransitionMarker(atTime) {
         const ctx = audio.ctx;
         const osc = ctx.createOscillator();
@@ -596,6 +1679,7 @@
         osc.connect(gain).connect(audio.masterSession);
         osc.start(atTime);
         osc.stop(atTime + 0.31);
+        audio.transitionMarkers.push({ osc: osc, gain: gain, atTime: atTime });
       }
 
       function scheduleJourney(totalSec, carrier) {
@@ -650,8 +1734,11 @@
       }
 
       document.addEventListener("visibilitychange", function () {
-        if (state.wakeLock !== null && document.visibilityState === "visible") {
-          acquireWakeLock();
+        if (document.visibilityState === "visible") {
+          try {
+            if (navigator.audioSession) navigator.audioSession.type = "playback";
+          } catch (e) {}
+          if (state.wakeLock !== null) acquireWakeLock();
         }
       });
 
@@ -662,19 +1749,44 @@
         return mm + ":" + ss;
       }
 
+      function formatElapsed(sec) {
+        const s = Math.max(0, Math.floor(sec));
+        const mm = String(Math.floor(s / 60)).padStart(2, "0");
+        const ss = String(s % 60).padStart(2, "0");
+        return mm + ":" + ss;
+      }
+
+      function updateJourneyProgress(done, total, pinDeep) {
+        const pct = total > 0 ? Math.min(100, (done / total) * 100) : 0;
+        els.journeyFill.style.width = pct.toFixed(2) + "%";
+        if (pinDeep && done >= total) {
+          els.journeyBand.textContent = "Current band: Focus 21";
+          return;
+        }
+        const marks = [0.15, 0.35, 0.55, 0.75, 1.0];
+        let idx = 0;
+        for (let i = 0; i < marks.length; i++) if (done / total >= marks[i]) idx = i;
+        els.journeyBand.textContent = "Current band: " + JOURNEY.labels[idx];
+      }
+
       function updateCountdownLoop() {
+        if (state.sessionIsInfinite) {
+          const elapsedSec = (performance.now() - state.sessionStartedAtPerfMs) / 1000;
+          els.timeReadout.textContent = formatElapsed(elapsedSec);
+          if (state.mode === "explore" && els.journeyOn.checked && state.isPlaying) {
+            updateJourneyProgress(elapsedSec, DEFAULTS.infiniteJourneySec, true);
+          }
+          state.timerRaf = requestAnimationFrame(updateCountdownLoop);
+          return;
+        }
+
         const msLeft = state.endAtPerfMs - performance.now();
         const secLeft = msLeft / 1000;
         els.timeReadout.textContent = formatTime(secLeft);
         if (state.mode === "explore" && els.journeyOn.checked && state.isPlaying) {
           const total = state.durationMin * 60;
           const done = Math.min(total, Math.max(0, total - secLeft));
-          const pct = (done / total) * 100;
-          els.journeyFill.style.width = pct.toFixed(2) + "%";
-          const marks = [0.15, 0.35, 0.55, 0.75, 1.0];
-          let idx = 0;
-          for (let i = 0; i < marks.length; i++) if (done / total >= marks[i]) idx = i;
-          els.journeyBand.textContent = "Current band: " + JOURNEY.labels[idx];
+          updateJourneyProgress(done, total, false);
         }
         if (msLeft <= 0) {
           onSessionElapsed();
@@ -690,9 +1802,16 @@
         audio.masterSession.gain.cancelScheduledValues(now);
         audio.masterSession.gain.setValueAtTime(audio.masterSession.gain.value, now);
         audio.masterSession.gain.linearRampToValueAtTime(0.0001, now + 3.0);
-        stopCurrentSources(now + 3.1);
-        playSoftChime(now + 3.0);
+        if (state.activeEngine === "tinker") {
+          stopTinkerGraph(now + 3.1);
+          if (state.mode !== "tinker") playSoftChime(now + 3.0);
+        } else {
+          stopCurrentSources(now + 3.1);
+          playSoftChime(now + 3.0);
+        }
         state.isPlaying = false;
+        state.sessionIsInfinite = false;
+        state.activeEngine = null;
         cancelAnimationFrame(state.timerRaf);
         state.timerRaf = 0;
         els.playBtn.textContent = "Play";
@@ -732,7 +1851,7 @@
 
       function resolveModeConfig() {
         if (state.mode === "sit") {
-          const p = SIT_PRESETS.concat(state.customPresets).find(function (x) { return x.id === state.selectedSit; }) || SIT_PRESETS[0];
+          const p = getSitPreset(state.selectedSit);
           return {
             carrier: p.carrier,
             beat: p.beat,
@@ -741,7 +1860,7 @@
             noiseLevel: Number(els.sitNoiseLevel.value),
             amDepth: p.amDepth != null ? p.amDepth : 0.12,
             amRate: p.amRate != null ? p.amRate : 0.2,
-            carrierLevel: 0.70,
+            carrierLevel: p.carrierLevel != null ? p.carrierLevel : 0.70,
             shimmer40: !!p.shimmer40,
             journey: false
           };
@@ -761,7 +1880,7 @@
               journey: true
             };
           }
-          const p = EXPLORE_PRESETS.find(function (x) { return x.id === state.selectedExplore; }) || EXPLORE_PRESETS[0];
+          const p = getExplorePreset(state.selectedExplore);
           return {
             carrier: 150,
             beat: p.beat,
@@ -775,15 +1894,16 @@
             journey: false
           };
         }
+        const p = SIT_PRESETS[0];
         return {
-          carrier: Number(els.tCarrier.value),
-          beat: Number(els.tBeat.value),
-          noiseType: els.tNoiseType.value,
-          noiseOn: els.tNoiseType.value !== "off",
-          noiseLevel: Number(els.tNoiseLayerLevel.value),
-          amDepth: Number(els.tDepth.value),
-          amRate: Number(els.tRate.value),
-          carrierLevel: Number(els.tCarrierLevel.value),
+          carrier: p.carrier,
+          beat: p.beat,
+          noiseType: p.noiseType,
+          noiseOn: true,
+          noiseLevel: p.noiseLevel,
+          amDepth: p.amDepth,
+          amRate: p.amRate,
+          carrierLevel: 0.70,
           shimmer40: false,
           journey: false
         };
@@ -793,10 +1913,19 @@
         await ensureAudioContext();
         await acquireWakeLock();
         stopCurrentSources(audio.ctx.currentTime + 0.01);
+        stopTinkerGraph(audio.ctx.currentTime + 0.01);
 
-        const cfg = resolveModeConfig();
-        buildCoreGraph(cfg);
-        startGraph();
+        const useTinker = shouldUseTinkerEngine();
+        const cfg = useTinker ? getTinkerStartConfig() : resolveModeConfig();
+        if (useTinker) {
+          buildTinkerGraph(cfg);
+          startTinkerGraph();
+          state.activeEngine = "tinker";
+        } else {
+          buildCoreGraph(cfg);
+          startGraph();
+          state.activeEngine = "binaural";
+        }
 
         const now = audio.ctx.currentTime;
         audio.masterSession.gain.cancelScheduledValues(now);
@@ -804,16 +1933,19 @@
         audio.masterSession.gain.linearRampToValueAtTime(1.0, now + 1.5);
 
         const totalSec = state.durationMin * 60;
-        state.endAtPerfMs = performance.now() + totalSec * 1000;
-        els.timeReadout.textContent = formatTime(totalSec);
+        const journeySec = state.durationMode === "infinite" ? DEFAULTS.infiniteJourneySec : totalSec;
+        state.sessionIsInfinite = state.durationMode === "infinite";
+        state.sessionStartedAtPerfMs = performance.now();
+        state.endAtPerfMs = state.sessionIsInfinite ? 0 : state.sessionStartedAtPerfMs + totalSec * 1000;
+        els.timeReadout.textContent = state.sessionIsInfinite ? "00:00" : formatTime(totalSec);
         cancelAnimationFrame(state.timerRaf);
         state.timerRaf = requestAnimationFrame(updateCountdownLoop);
 
-        if (cfg.journey) {
+        if (!useTinker && cfg.journey) {
           els.journeyMeta.classList.remove("hidden");
           els.journeyFill.style.width = "0%";
           els.journeyBand.textContent = "Current band: Focus 3";
-          scheduleJourney(totalSec, cfg.carrier);
+          scheduleJourney(journeySec, cfg.carrier);
         } else {
           els.journeyMeta.classList.add("hidden");
         }
@@ -829,8 +1961,14 @@
         audio.masterSession.gain.cancelScheduledValues(now);
         audio.masterSession.gain.setValueAtTime(audio.masterSession.gain.value, now);
         audio.masterSession.gain.linearRampToValueAtTime(0.0001, now + 2.0);
-        stopCurrentSources(now + 2.1);
+        if (state.activeEngine === "tinker") {
+          stopTinkerGraph(now + 2.1);
+        } else {
+          stopCurrentSources(now + 2.1);
+        }
         state.isPlaying = false;
+        state.sessionIsInfinite = false;
+        state.activeEngine = null;
         cancelAnimationFrame(state.timerRaf);
         state.timerRaf = 0;
         els.playBtn.textContent = "Play";
@@ -839,6 +1977,12 @@
       }
 
       function selectMode(mode) {
+        if (state.mode === "tinker" && mode !== "tinker") {
+          exitEditMode();
+        }
+        if (state.mode !== mode && state.isPlaying) {
+          fadeOutActiveEngine(1);
+        }
         state.mode = mode;
         const tabs = els.modeTabs.querySelectorAll(".tab");
         tabs.forEach(function (btn) {
@@ -850,6 +1994,88 @@
         saveState();
       }
 
+      function updateEditBanner() {
+        if (!state.editingPresetId) {
+          els.editBanner.classList.add("hidden");
+          els.savePreset.textContent = "Save";
+          return;
+        }
+        const p = state.customPresets.find(function (x) { return x.id === state.editingPresetId; });
+        if (!p) {
+          exitEditMode();
+          return;
+        }
+        els.editTitle.textContent = "Editing '" + p.name + "'";
+        els.editBanner.classList.remove("hidden");
+        els.savePreset.textContent = "Overwrite";
+      }
+
+      function beginEditPreset(p) {
+        state.editingPresetId = p.id;
+        selectMode("tinker");
+        els.presetName.value = p.name;
+        setTinkerControlsFromPreset(isSchemaV2(p) ? p : legacyToTinkerPreset(p));
+        updateEditBanner();
+      }
+
+      function exitEditMode() {
+        state.editingPresetId = null;
+        els.editBanner.classList.add("hidden");
+        els.savePreset.textContent = "Save";
+      }
+
+      function resetSitMode() {
+        state.selectedSit = DEFAULTS.sitPreset;
+        const p = getSitPreset(state.selectedSit);
+        els.sitNoiseOn.checked = true;
+        syncSitNoiseForPreset(p);
+        setMasterVolume(DEFAULTS.masterVol);
+        renderSitTiles();
+        renderMineTiles();
+        if (state.isPlaying && state.mode === "sit") {
+          if (state.activeEngine === "binaural") applyConfigLive(resolveModeConfig());
+          else fadeOutActiveEngine(1);
+        }
+        saveState();
+      }
+
+      function resetExploreMode() {
+        state.selectedExplore = DEFAULTS.explorePreset;
+        els.journeyOn.checked = false;
+        els.journeyMeta.classList.add("hidden");
+        els.exploreNoiseOn.checked = true;
+        els.exploreNoiseLevel.value = "0.10";
+        els.exploreNoiseLevelVal.textContent = "0.10";
+        renderExploreTiles();
+        if (state.isPlaying && state.mode === "explore") applyConfigLive(resolveModeConfig());
+        saveState();
+      }
+
+      function resetTinkerMode() {
+        setTinkerControlsFromPreset(cloneTinkerDefaults());
+      }
+
+      function selectSitPreset(p) {
+        state.selectedSit = p.id;
+        syncSitNoiseForPreset(p);
+        renderSitTiles();
+        renderMineTiles();
+        if (state.isPlaying && state.mode === "sit") {
+          const nextEngine = isSchemaV2(p) ? "tinker" : "binaural";
+          if (state.activeEngine === nextEngine) {
+            if (nextEngine === "tinker") {
+              state.tinker = normalizeTinkerState(p);
+              applyTinkerStateLive();
+            } else {
+              applyConfigLive(resolveModeConfig());
+            }
+          } else {
+            fadeOutActiveEngine(1);
+          }
+        }
+        saveState();
+      }
+
       function renderSitTiles() {
         els.sitTiles.innerHTML = "";
         SIT_PRESETS.forEach(function (p) {
@@ -857,10 +2083,7 @@
           b.className = "tile" + (p.id === state.selectedSit ? " sel" : "");
           b.innerHTML = "<strong>" + p.name + "</strong><span>" + p.beat + " Hz · " + p.band + "</span><span>" + p.note + "</span>";
           b.addEventListener("click", function () {
-            state.selectedSit = p.id;
-            renderSitTiles();
-            renderMineTiles();
-            saveState();
+            selectSitPreset(p);
           });
           els.sitTiles.appendChild(b);
         });
@@ -874,16 +2097,86 @@
         }
         els.mineWrap.classList.remove("hidden");
         state.customPresets.forEach(function (p) {
-          const b = document.createElement("button");
-          b.className = "tile" + (p.id === state.selectedSit ? " sel" : "");
-          b.innerHTML = "<strong>" + p.name + "</strong><span>" + Number(p.beat).toFixed(1) + " Hz · custom</span><span>" + Number(p.carrier).toFixed(1) + " Hz carrier</span>";
-          b.addEventListener("click", function () {
-            state.selectedSit = p.id;
-            renderSitTiles();
-            renderMineTiles();
-            saveState();
-          });
-          els.mineTiles.appendChild(b);
+          const tile = document.createElement("div");
+          tile.className = "tile mine-tile" + (p.id === state.selectedSit ? " sel" : "");
+
+          if (state.renamingPresetId === p.id) {
+            const input = document.createElement("input");
+            input.type = "text";
+            input.maxLength = 24;
+            input.value = p.name;
+            const actions = document.createElement("div");
+            actions.className = "rename-actions mine-actions";
+            const save = document.createElement("button");
+            save.textContent = "Save";
+            const cancel = document.createElement("button");
+            cancel.textContent = "Cancel";
+            save.addEventListener("click", function () {
+              const nextName = input.value.trim();
+              if (nextName) {
+                p.name = nextName;
+                if (state.editingPresetId === p.id) updateEditBanner();
+                saveState();
+              }
+              state.renamingPresetId = null;
+              renderMineTiles();
+            });
+            cancel.addEventListener("click", function () {
+              state.renamingPresetId = null;
+              renderMineTiles();
+            });
+            actions.appendChild(save);
+            actions.appendChild(cancel);
+            tile.appendChild(input);
+            tile.appendChild(actions);
+          } else {
+            const name = document.createElement("button");
+            name.className = "mine-title";
+            name.textContent = p.name;
+            name.addEventListener("click", function () {
+              state.renamingPresetId = p.id;
+              renderMineTiles();
+            });
+            const meta = document.createElement("span");
+            if (isSchemaV2(p)) {
+              meta.textContent = "Beat " + Math.abs(p.oscA.pitch - p.oscB.pitch).toFixed(1) + " Hz · two-osc";
+            } else {
+              meta.textContent = Number(p.beat).toFixed(1) + " Hz · " + Number(p.carrier).toFixed(1) + " Hz carrier";
+            }
+            const badge = document.createElement("span");
+            badge.className = "tag";
+            badge.textContent = isSchemaV2(p) ? "Mine" : "legacy";
+            const actions = document.createElement("div");
+            actions.className = "mine-actions";
+            const use = document.createElement("button");
+            const edit = document.createElement("button");
+            const del = document.createElement("button");
+            use.textContent = "Use";
+            edit.textContent = "Edit";
+            del.textContent = "Delete";
+            use.addEventListener("click", function () {
+              selectSitPreset(p);
+            });
+            edit.addEventListener("click", function () { beginEditPreset(p); });
+            del.addEventListener("click", function () {
+              if (!window.confirm("Delete '" + p.name + "'?")) return;
+              state.customPresets = state.customPresets.filter(function (x) { return x.id !== p.id; });
+              if (state.selectedSit === p.id) state.selectedSit = DEFAULTS.sitPreset;
+              if (state.editingPresetId === p.id) exitEditMode();
+              renderSitTiles();
+              renderMineTiles();
+              saveState();
+            });
+            actions.appendChild(use);
+            actions.appendChild(edit);
+            actions.appendChild(del);
+            tile.appendChild(name);
+            tile.appendChild(meta);
+            tile.appendChild(badge);
+            tile.appendChild(actions);
+          }
+
+          els.mineTiles.appendChild(tile);
         });
       }
 
@@ -896,45 +2189,33 @@
           b.addEventListener("click", function () {
             state.selectedExplore = p.id;
             renderExploreTiles();
+            if (state.isPlaying && state.mode === "explore" && !els.journeyOn.checked) applyConfigLive(resolveModeConfig());
             saveState();
           });
           els.exploreTiles.appendChild(b);
         });
       }
 
-      function updateTinkerReadouts() {
-        const c = Number(els.tCarrier.value);
-        const b = Number(els.tBeat.value);
-        const left = c - b / 2;
-        const right = c + b / 2;
-        els.tCarrierVal.textContent = String(Math.round(c));
-        els.tBeatVal.textContent = b.toFixed(1);
-        els.tLrReadout.textContent = left.toFixed(1) + " / " + right.toFixed(1) + " Hz";
-        els.tNoiseLevelVal.textContent = Number(els.tNoiseLevel.value).toFixed(2);
-        els.tDepthVal.textContent = Number(els.tDepth.value).toFixed(2);
-        els.tRateVal.textContent = Number(els.tRate.value).toFixed(2);
-        els.tCarrierLevelVal.textContent = Number(els.tCarrierLevel.value).toFixed(2);
-        els.tNoiseLayerLevelVal.textContent = Number(els.tNoiseLayerLevel.value).toFixed(2);
-        if (state.isPlaying && state.mode === "tinker" && audio.binaural) {
-          const t = audio.ctx.currentTime + 0.05;
-          audio.binaural.left.frequency.linearRampToValueAtTime(left, t);
-          audio.binaural.right.frequency.linearRampToValueAtTime(right, t);
-          if (audio.carrierAM) {
-            const depth = Number(els.tDepth.value);
-            const rate = Number(els.tRate.value);
-            audio.carrierAM.depthAmp.gain.linearRampToValueAtTime(depth, t);
-            audio.carrierAM.modGain.gain.linearRampToValueAtTime(1 - depth, t);
-            audio.carrierAM.lfo.frequency.linearRampToValueAtTime(rate, t);
-          }
-          if (audio.noiseAM) {
-            const depthN = Number(els.tDepth.value);
-            const rateN = Number(els.tRate.value);
-            audio.noiseAM.depthAmp.gain.linearRampToValueAtTime(depthN, t);
-            audio.noiseAM.modGain.gain.linearRampToValueAtTime(1 - depthN, t);
-            audio.noiseAM.lfo.frequency.linearRampToValueAtTime(rateN, t);
-          }
-          if (audio.carrierGain) audio.carrierGain.gain.linearRampToValueAtTime(Number(els.tCarrierLevel.value), t);
-          if (audio.noiseGain) audio.noiseGain.gain.linearRampToValueAtTime(Number(els.tNoiseLayerLevel.value), t);
+      function setActiveTinkerPane(index) {
+        els.tinkerDots.querySelectorAll(".tinker-dot").forEach(function (dot) {
+          dot.classList.toggle("active", Number(dot.dataset.pane) === index);
+        });
+      }
+
+      function setupTinkerPager() {
+        const panes = Array.from(els.tinkerSwipe.querySelectorAll(".tinker-pane"));
+        if ("IntersectionObserver" in window) {
+          const observer = new IntersectionObserver(function (entries) {
+            entries.forEach(function (entry) {
+              if (entry.isIntersecting) setActiveTinkerPane(Number(entry.target.dataset.pane));
+            });
+          }, { root: els.tinkerSwipe, threshold: 0.6 });
+          panes.forEach(function (pane) { observer.observe(pane); });
+        } else {
+          els.tinkerSwipe.addEventListener("scroll", function () {
+            const index = Math.round(els.tinkerSwipe.scrollLeft / Math.max(1, els.tinkerSwipe.clientWidth));
+            setActiveTinkerPane(index);
+          });
         }
       }
 
@@ -960,20 +2241,20 @@
         });
 
         els.masterVolume.addEventListener("input", function () {
-          state.masterVol = Number(els.masterVolume.value);
-          els.masterVal.textContent = state.masterVol.toFixed(2);
-          if (audio.userMaster && audio.ctx) {
-            audio.userMaster.gain.linearRampToValueAtTime(state.masterVol, audio.ctx.currentTime + 0.05);
-          }
-          saveState();
+          setMasterVolume(Number(els.masterVolume.value));
         });
 
         els.durationRow.addEventListener("click", function (e) {
           const b = e.target.closest(".dur-btn");
           if (!b) return;
-          state.durationMin = Number(b.dataset.min);
+          if (b.dataset.min === "infinite") {
+            state.durationMode = "infinite";
+          } else {
+            state.durationMode = "timed";
+            state.durationMin = Number(b.dataset.min);
+          }
           els.durationRow.querySelectorAll(".dur-btn").forEach(function (x) { x.classList.toggle("active", x === b); });
-          if (!state.isPlaying) els.timeReadout.textContent = formatTime(state.durationMin * 60);
+          if (!state.isPlaying) els.timeReadout.textContent = state.durationMode === "infinite" ? "∞" : formatTime(state.durationMin * 60);
           saveState();
         });
 
@@ -986,47 +2267,104 @@
         els.sitNoiseLevel.addEventListener("input", function () {
           els.sitNoiseLevelVal.textContent = Number(els.sitNoiseLevel.value).toFixed(2);
           if (state.isPlaying && state.mode === "sit" && audio.noiseGain && els.sitNoiseOn.checked) {
-            audio.noiseGain.gain.linearRampToValueAtTime(Number(els.sitNoiseLevel.value), audio.ctx.currentTime + 0.05);
+            rampParam(audio.noiseGain.gain, Number(els.sitNoiseLevel.value), 0.5);
           }
         });
         els.sitNoiseOn.addEventListener("change", function () {
           if (state.isPlaying && state.mode === "sit" && audio.noiseGain) {
             const v = els.sitNoiseOn.checked ? Number(els.sitNoiseLevel.value) : 0;
-            audio.noiseGain.gain.linearRampToValueAtTime(v, audio.ctx.currentTime + 0.1);
+            rampParam(audio.noiseGain.gain, v, 0.5);
           }
         });
         els.exploreNoiseLevel.addEventListener("input", function () {
           els.exploreNoiseLevelVal.textContent = Number(els.exploreNoiseLevel.value).toFixed(2);
           if (state.isPlaying && state.mode === "explore" && audio.noiseGain && els.exploreNoiseOn.checked && !els.journeyOn.checked) {
-            audio.noiseGain.gain.linearRampToValueAtTime(Number(els.exploreNoiseLevel.value), audio.ctx.currentTime + 0.05);
+            rampParam(audio.noiseGain.gain, Number(els.exploreNoiseLevel.value), 0.5);
           }
         });
         els.exploreNoiseOn.addEventListener("change", function () {
           if (state.isPlaying && state.mode === "explore" && audio.noiseGain && !els.journeyOn.checked) {
             const v = els.exploreNoiseOn.checked ? Number(els.exploreNoiseLevel.value) : 0;
-            audio.noiseGain.gain.linearRampToValueAtTime(v, audio.ctx.currentTime + 0.1);
+            rampParam(audio.noiseGain.gain, v, 0.5);
           }
         });
 
-        [els.tCarrier, els.tBeat, els.tNoiseType, els.tNoiseLevel, els.tDepth, els.tRate, els.tCarrierLevel, els.tNoiseLayerLevel]
-          .forEach(function (el) { el.addEventListener("input", updateTinkerReadouts); });
+        [
+          els.oscAPitch, els.oscALowpass, els.oscAPan, els.oscAVolume,
+          els.oscBPitch, els.oscBLowpass, els.oscBPan, els.oscBVolume,
+          els.noiseWidth, els.noiseLowpass, els.noiseLevel,
+          els.pulseToneDepth, els.pulseToneRate, els.pulseNoiseDepth, els.pulseNoiseRate
+        ].forEach(function (el) {
+          el.addEventListener("input", setTinkerFromUiAndApply);
+        });
+
+        els.oscAOn.addEventListener("click", function () {
+          state.tinker.oscA.on = !state.tinker.oscA.on;
+          updateTinkerReadouts();
+          if (state.isPlaying && state.activeEngine === "tinker") applyTinkerStateLive();
+          saveState();
+        });
+        els.oscBOn.addEventListener("click", function () {
+          state.tinker.oscB.on = !state.tinker.oscB.on;
+          updateTinkerReadouts();
+          if (state.isPlaying && state.activeEngine === "tinker") applyTinkerStateLive();
+          saveState();
+        });
+        els.noiseOn.addEventListener("click", function () {
+          state.tinker.noise.on = !state.tinker.noise.on;
+          updateTinkerReadouts();
+          if (state.isPlaying && state.activeEngine === "tinker") applyTinkerStateLive();
+          saveState();
+        });
+
+        document.querySelectorAll(".wave-grid").forEach(function (grid) {
+          grid.addEventListener("click", function (e) {
+            const btn = e.target.closest(".wave-btn");
+            if (!btn) return;
+            setTinkerWave(grid.dataset.osc, btn.dataset.wave);
+          });
+        });
+        els.noiseTypeGrid.addEventListener("click", function (e) {
+          const btn = e.target.closest(".type-btn");
+          if (!btn) return;
+          state.tinker.noise.type = btn.dataset.type;
+          updateTinkerReadouts();
+          if (state.isPlaying && state.activeEngine === "tinker") applyTinkerStateLive();
+          saveState();
+        });
+        els.tinkerDots.addEventListener("click", function (e) {
+          const dot = e.target.closest(".tinker-dot");
+          if (!dot) return;
+          const pane = els.tinkerSwipe.querySelector('.tinker-pane[data-pane="' + dot.dataset.pane + '"]');
+          if (pane) pane.scrollIntoView({ behavior: "smooth", inline: "center", block: "nearest" });
+        });
+
+        els.resetSit.addEventListener("click", resetSitMode);
+        els.resetExplore.addEventListener("click", resetExploreMode);
+        els.resetTinker.addEventListener("click", resetTinkerMode);
+        els.cancelEdit.addEventListener("click", exitEditMode);
 
         els.savePreset.addEventListener("click", function () {
           const name = els.presetName.value.trim();
           if (!name) return;
-          const id = "custom-" + Date.now();
+          state.tinker = readTinkerStateFromUi();
           const preset = {
-            id: id,
+            id: state.editingPresetId || "custom-" + Date.now(),
             name: name,
-            carrier: Number(els.tCarrier.value),
-            beat: Number(els.tBeat.value),
-            noiseType: els.tNoiseType.value === "off" ? "pink" : els.tNoiseType.value,
-            noiseLevel: Number(els.tNoiseLayerLevel.value),
-            amDepth: Number(els.tDepth.value),
-            amRate: Number(els.tRate.value),
-            shimmer40: false
+            schemaVersion: 2,
+            oscA: state.tinker.oscA,
+            oscB: state.tinker.oscB,
+            noise: state.tinker.noise,
+            pulse: state.tinker.pulse
           };
-          state.customPresets.push(preset);
+          if (state.editingPresetId) {
+            state.customPresets = state.customPresets.map(function (p) {
+              return p.id === state.editingPresetId ? preset : p;
+            });
+            exitEditMode();
+          } else {
+            state.customPresets.push(preset);
+          }
           els.presetName.value = "";
           renderMineTiles();
           saveState();
@@ -1034,19 +2372,24 @@
       }
 
       function initUiFromState() {
+        if (!state.tinker) state.tinker = cloneTinkerDefaults();
         selectMode(state.mode);
+        if (state.selectedSit) syncSitNoiseForPreset(getSitPreset(state.selectedSit));
         renderSitTiles();
         renderMineTiles();
         renderExploreTiles();
         els.masterVolume.value = String(state.masterVol);
         els.masterVal.textContent = state.masterVol.toFixed(2);
         els.durationRow.querySelectorAll(".dur-btn").forEach(function (b) {
-          b.classList.toggle("active", Number(b.dataset.min) === state.durationMin);
+          const isActive = state.durationMode === "infinite" ? b.dataset.min === "infinite" : Number(b.dataset.min) === state.durationMin;
+          b.classList.toggle("active", isActive);
         });
-        els.timeReadout.textContent = formatTime(state.durationMin * 60);
+        els.timeReadout.textContent = state.durationMode === "infinite" ? "∞" : formatTime(state.durationMin * 60);
         els.sitNoiseLevelVal.textContent = Number(els.sitNoiseLevel.value).toFixed(2);
         els.exploreNoiseLevelVal.textContent = Number(els.exploreNoiseLevel.value).toFixed(2);
         updateTinkerReadouts();
+        updateEditBanner();
+        setupTinkerPager();
       }
 
       loadState();
