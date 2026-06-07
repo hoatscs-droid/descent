@@ -9,6 +9,14 @@
   <link rel="apple-touch-icon" href="icon-512.png">
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#0e0e12">
+  <meta name="description" content="A warm, minimal binaural meditation PWA.">
+  <meta property="og:title" content="Descent">
+  <meta property="og:description" content="A warm, minimal binaural meditation PWA.">
+  <meta property="og:image" content="icon-512.png">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="Descent">
+  <meta name="twitter:description" content="A warm, minimal binaural meditation PWA.">
+  <meta name="twitter:image" content="icon-512.png">
   <title>Descent</title>
   <style>
     :root {
@@ -783,6 +791,8 @@
         timerRaf: 0,
         journeyRaf: 0,
         audioSessionSet: false,
+        mediaActionBusy: false,
+        lastMediaPositionSyncMs: 0,
         hasShownHeadphonesHint: false,
         customPresets: [],
         editingPresetId: null,
@@ -953,6 +963,101 @@
         } catch (e) {
           els.ringerHint.classList.remove("hidden");
         }
+      }
+
+      function getMediaTitle() {
+        if (state.mode === "sit") {
+          const p = getSitPreset(state.selectedSit);
+          return (p && p.name ? p.name : "Sit") + " · Descent";
+        }
+        if (state.mode === "explore") {
+          return (els.journeyOn.checked ? "Journey" : getExplorePreset(state.selectedExplore).name) + " · Descent";
+        }
+        return "Tinker · Descent";
+      }
+
+      function syncMediaSessionMetadata() {
+        if (!("mediaSession" in navigator) || typeof MediaMetadata === "undefined") return;
+        try {
+          navigator.mediaSession.metadata = new MediaMetadata({
+            title: getMediaTitle(),
+            artist: "Descent",
+            album: "Binaural meditation",
+            artwork: [
+              { src: "icon-512.png", sizes: "512x512", type: "image/png" }
+            ]
+          });
+        } catch (e) {}
+      }
+
+      function syncMediaSessionPlaybackState(nextState) {
+        if (!("mediaSession" in navigator)) return;
+        try {
+          navigator.mediaSession.playbackState = nextState || (state.isPlaying ? "playing" : "paused");
+        } catch (e) {}
+      }
+
+      function syncMediaSessionPosition(force) {
+        if (!("mediaSession" in navigator) || typeof navigator.mediaSession.setPositionState !== "function") return;
+        if (!state.isPlaying || state.sessionIsInfinite) return;
+        const nowMs = performance.now();
+        if (!force && nowMs - state.lastMediaPositionSyncMs < 4000) return;
+        state.lastMediaPositionSyncMs = nowMs;
+        const duration = state.durationMin * 60;
+        const elapsed = Math.min(duration, Math.max(0, (nowMs - state.sessionStartedAtPerfMs) / 1000));
+        try {
+          navigator.mediaSession.setPositionState({
+            duration: duration,
+            playbackRate: 1,
+            position: elapsed
+          });
+        } catch (e) {}
+      }
+
+      function runMediaAction(action) {
+        if (state.mediaActionBusy) return;
+        state.mediaActionBusy = true;
+        Promise.resolve()
+          .then(action)
+          .catch(function () {})
+          .then(function () {
+            state.mediaActionBusy = false;
+            syncMediaSessionMetadata();
+            syncMediaSessionPlaybackState();
+            syncMediaSessionPosition(true);
+          });
+      }
+
+      function setupMediaSessionControls() {
+        if (!("mediaSession" in navigator)) return;
+        syncMediaSessionMetadata();
+        syncMediaSessionPlaybackState("none");
+        [
+          ["play", function () {
+            runMediaAction(async function () {
+              if (state.isPlaying) {
+                await ensureAudioContext();
+              } else {
+                await startSession();
+              }
+            });
+          }],
+          ["pause", function () {
+            runMediaAction(async function () {
+              if (state.isPlaying) await stopSession();
+            });
+          }],
+          ["stop", function () {
+            runMediaAction(async function () {
+              if (state.isPlaying) await stopSession();
+            });
+          }]
+        ].forEach(function (entry) {
+          try { navigator.mediaSession.setActionHandler(entry[0], entry[1]); } catch (e) {}
+        });
+        ["seekbackward", "seekforward", "previoustrack", "nexttrack"].forEach(function (action) {
+          try { navigator.mediaSession.setActionHandler(action, null); } catch (e) {}
+        });
       }
 
       function makeBinaural(ctx, carrier, beatHz) {
@@ -1649,6 +1754,7 @@
         state.timerRaf = 0;
         els.playBtn.textContent = "Play";
         els.playBtn.classList.remove("stop");
+        syncMediaSessionPlaybackState("paused");
         releaseWakeLock();
       }
 
@@ -1788,6 +1894,7 @@
           const done = Math.min(total, Math.max(0, total - secLeft));
           updateJourneyProgress(done, total, false);
         }
+        syncMediaSessionPosition(false);
         if (msLeft <= 0) {
           onSessionElapsed();
           return;
@@ -1816,6 +1923,7 @@
         state.timerRaf = 0;
         els.playBtn.textContent = "Play";
         els.playBtn.classList.remove("stop");
+        syncMediaSessionPlaybackState("paused");
         releaseWakeLock();
       }
 
@@ -1953,6 +2061,9 @@
         state.isPlaying = true;
         els.playBtn.textContent = "Stop";
         els.playBtn.classList.add("stop");
+        syncMediaSessionMetadata();
+        syncMediaSessionPlaybackState("playing");
+        syncMediaSessionPosition(true);
       }
 
       async function stopSession() {
@@ -1973,6 +2084,7 @@
         state.timerRaf = 0;
         els.playBtn.textContent = "Play";
         els.playBtn.classList.remove("stop");
+        syncMediaSessionPlaybackState("paused");
         await releaseWakeLock();
       }
 
@@ -1991,6 +2103,7 @@
         els.panels.forEach(function (p) {
           p.classList.toggle("hidden", p.id !== "mode-" + mode);
         });
+        syncMediaSessionMetadata();
         saveState();
       }
 
@@ -2036,6 +2149,7 @@
           if (state.activeEngine === "binaural") applyConfigLive(resolveModeConfig());
           else fadeOutActiveEngine(1);
         }
+        syncMediaSessionMetadata();
         saveState();
       }
 
@@ -2048,6 +2162,7 @@
         els.exploreNoiseLevelVal.textContent = "0.10";
         renderExploreTiles();
         if (state.isPlaying && state.mode === "explore") applyConfigLive(resolveModeConfig());
+        syncMediaSessionMetadata();
         saveState();
       }
 
@@ -2073,6 +2188,7 @@
             fadeOutActiveEngine(1);
           }
         }
+        syncMediaSessionMetadata();
         saveState();
       }
 
@@ -2190,6 +2306,7 @@
             state.selectedExplore = p.id;
             renderExploreTiles();
             if (state.isPlaying && state.mode === "explore" && !els.journeyOn.checked) applyConfigLive(resolveModeConfig());
+            syncMediaSessionMetadata();
             saveState();
           });
           els.exploreTiles.appendChild(b);
@@ -2262,6 +2379,7 @@
           if (!els.journeyOn.checked) {
             els.journeyMeta.classList.add("hidden");
           }
+          syncMediaSessionMetadata();
         });
 
         els.sitNoiseLevel.addEventListener("input", function () {
@@ -2396,6 +2514,7 @@
       setupAudioSessionHint();
       bindUi();
       initUiFromState();
+      setupMediaSessionControls();
     })();
   </script>
 </body>
