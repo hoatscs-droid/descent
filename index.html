@@ -865,8 +865,11 @@
         durationMode: "timed",
         masterVol: 0.65,
         isPlaying: false,
+        isPaused: false,
         sessionIsInfinite: false,
         sessionStartedAtPerfMs: 0,
+        elapsedBeforePauseMs: 0,
+        runStartedAtPerfMs: 0,
         endAtPerfMs: 0,
         timerRaf: 0,
         journeyRaf: 0,
@@ -1083,8 +1086,23 @@
       function syncMediaSessionPlaybackState(nextState) {
         if (!("mediaSession" in navigator)) return;
         try {
-          navigator.mediaSession.playbackState = nextState || (state.isPlaying ? "playing" : "paused");
+          navigator.mediaSession.playbackState = nextState || (state.isPlaying && !state.isPaused ? "playing" : "paused");
         } catch (e) {}
+      }
+
+      function currentElapsedMs() {
+        if (!state.isPlaying) return state.elapsedBeforePauseMs;
+        if (state.isPaused) return state.elapsedBeforePauseMs;
+        return state.elapsedBeforePauseMs + (performance.now() - state.runStartedAtPerfMs);
+      }
+
+      function currentRemainingMs() {
+        if (state.sessionIsInfinite) return Infinity;
+        return Math.max(0, state.durationMin * 60 * 1000 - currentElapsedMs());
+      }
+
+      function syncEndAtFromElapsed() {
+        state.endAtPerfMs = state.sessionIsInfinite ? 0 : performance.now() + currentRemainingMs();
       }
 
       function syncMediaSessionPosition(force) {
@@ -1099,7 +1117,7 @@
         const nowMs = performance.now();
         if (!force && nowMs - state.lastMediaPositionSyncMs < 4000) return;
         const duration = state.durationMin * 60;
-        const elapsed = Math.min(duration, Math.max(0, (nowMs - state.sessionStartedAtPerfMs) / 1000));
+        const elapsed = Math.min(duration, Math.max(0, currentElapsedMs() / 1000));
         if (!isFinite(duration) || duration <= 0 || !isFinite(elapsed) || elapsed < 0 || elapsed > duration) return;
         state.lastMediaPositionSyncMs = nowMs;
         try {
@@ -1133,7 +1151,9 @@
           ["play", function () {
             runMediaAction(async function () {
               await ensureAudioContext();
-              if (!state.isPlaying) {
+              if (state.isPlaying && state.isPaused) {
+                await resumeSession();
+              } else if (!state.isPlaying) {
                 await startSession();
               }
               syncMediaSessionPlaybackState("playing");
@@ -1142,7 +1162,7 @@
           }],
           ["pause", function () {
             runMediaAction(async function () {
-              if (state.isPlaying) await stopSession();
+              if (state.isPlaying && !state.isPaused) await pauseSession();
               syncMediaSessionPlaybackState("paused");
             });
           }],
@@ -1252,7 +1272,7 @@
             await audio.ctx.resume();
           } catch (e) {}
         }
-        if (state.isPlaying && audio.ctx.state === "running") {
+        if (state.isPlaying && !state.isPaused && audio.ctx.state === "running") {
           syncMediaSessionPlaybackState("playing");
         }
       }
@@ -2019,7 +2039,12 @@
 
       function finishStoppedState() {
         state.isPlaying = false;
+        state.isPaused = false;
         state.sessionIsInfinite = false;
+        state.elapsedBeforePauseMs = 0;
+        state.runStartedAtPerfMs = 0;
+        state.sessionStartedAtPerfMs = 0;
+        state.endAtPerfMs = 0;
         state.activeEngine = null;
         cancelAnimationFrame(state.timerRaf);
         state.timerRaf = 0;
@@ -2032,6 +2057,9 @@
       function fadeOutActiveEngine(seconds) {
         if (!audio.ctx || !state.isPlaying) return;
         const fade = seconds || 1;
+        if (state.isPaused && audio.ctx.state === "suspended") {
+          try { audio.ctx.resume().catch(function () {}); } catch (e) {}
+        }
         const now = audio.ctx.currentTime;
         audio.masterSession.gain.cancelScheduledValues(now);
         audio.masterSession.gain.setValueAtTime(audio.masterSession.gain.value, now);
@@ -2116,7 +2144,7 @@
             if (navigator.audioSession) navigator.audioSession.type = "playback";
           } catch (e) {}
           if (state.wakeLock !== null) acquireWakeLock();
-          if (state.isPlaying) {
+          if (state.isPlaying && !state.isPaused) {
             syncMediaSessionPlaybackState("playing");
             syncMediaSessionPosition(true);
           }
@@ -2150,27 +2178,35 @@
         els.journeyBand.textContent = "Current band: " + JOURNEY.labels[idx];
       }
 
-      function updateCountdownLoop() {
+      function updateTimerDisplayFromElapsed() {
+        const elapsedSec = currentElapsedMs() / 1000;
         if (state.sessionIsInfinite) {
-          const elapsedSec = (performance.now() - state.sessionStartedAtPerfMs) / 1000;
           els.timeReadout.textContent = formatElapsed(elapsedSec);
           if (state.mode === "explore" && els.journeyOn.checked && state.isPlaying) {
             updateJourneyProgress(elapsedSec, DEFAULTS.infiniteJourneySec, true);
           }
+          return;
+        }
+
+        const total = state.durationMin * 60;
+        const secLeft = total - elapsedSec;
+        els.timeReadout.textContent = formatTime(secLeft);
+        if (state.mode === "explore" && els.journeyOn.checked && state.isPlaying) {
+          const done = Math.min(total, Math.max(0, elapsedSec));
+          updateJourneyProgress(done, total, false);
+        }
+      }
+
+      function updateCountdownLoop() {
+        updateTimerDisplayFromElapsed();
+        if (state.isPaused) return;
+        if (state.sessionIsInfinite) {
           state.timerRaf = requestAnimationFrame(updateCountdownLoop);
           return;
         }
 
-        const msLeft = state.endAtPerfMs - performance.now();
-        const secLeft = msLeft / 1000;
-        els.timeReadout.textContent = formatTime(secLeft);
-        if (state.mode === "explore" && els.journeyOn.checked && state.isPlaying) {
-          const total = state.durationMin * 60;
-          const done = Math.min(total, Math.max(0, total - secLeft));
-          updateJourneyProgress(done, total, false);
-        }
         syncMediaSessionPosition(false);
-        if (msLeft <= 0) {
+        if (currentElapsedMs() / 1000 >= state.durationMin * 60) {
           onSessionElapsed();
           return;
         }
@@ -2192,7 +2228,12 @@
           playSoftChime(now + 3.0);
         }
         state.isPlaying = false;
+        state.isPaused = false;
         state.sessionIsInfinite = false;
+        state.elapsedBeforePauseMs = 0;
+        state.runStartedAtPerfMs = 0;
+        state.sessionStartedAtPerfMs = 0;
+        state.endAtPerfMs = 0;
         state.activeEngine = null;
         cancelAnimationFrame(state.timerRaf);
         state.timerRaf = 0;
@@ -2296,7 +2337,60 @@
         };
       }
 
+      async function pauseSession() {
+        if (!audio.ctx || !state.isPlaying || state.isPaused) return;
+        state.elapsedBeforePauseMs += performance.now() - state.runStartedAtPerfMs;
+        state.isPaused = true;
+        syncEndAtFromElapsed();
+
+        const now = audio.ctx.currentTime;
+        audio.masterSession.gain.cancelScheduledValues(now);
+        audio.masterSession.gain.setValueAtTime(audio.masterSession.gain.value, now);
+        audio.masterSession.gain.linearRampToValueAtTime(0.0001, now + 0.4);
+        window.setTimeout(async function () {
+          try {
+            if (state.isPaused && audio.ctx) await audio.ctx.suspend();
+          } catch (e) {}
+        }, 450);
+
+        cancelAnimationFrame(state.timerRaf);
+        state.timerRaf = 0;
+        updateTimerDisplayFromElapsed();
+        els.playBtn.textContent = "Play";
+        els.playBtn.classList.remove("stop");
+        syncMediaSessionPlaybackState("paused");
+        syncMediaSessionPosition(true);
+        await releaseWakeLock();
+        saveState();
+      }
+
+      async function resumeSession() {
+        if (!audio.ctx || !state.isPlaying || !state.isPaused) return;
+        await ensureAudioContext();
+        await acquireWakeLock();
+        state.isPaused = false;
+        state.runStartedAtPerfMs = performance.now();
+        syncEndAtFromElapsed();
+
+        const now = audio.ctx.currentTime;
+        audio.masterSession.gain.cancelScheduledValues(now);
+        audio.masterSession.gain.setValueAtTime(0.0001, now);
+        audio.masterSession.gain.linearRampToValueAtTime(1.0, now + 0.6);
+
+        cancelAnimationFrame(state.timerRaf);
+        state.timerRaf = requestAnimationFrame(updateCountdownLoop);
+        els.playBtn.textContent = "Stop";
+        els.playBtn.classList.add("stop");
+        syncMediaSessionPlaybackState("playing");
+        syncMediaSessionPosition(true);
+        saveState();
+      }
+
       async function startSession() {
+        state.isPaused = false;
+        state.elapsedBeforePauseMs = 0;
+        state.runStartedAtPerfMs = performance.now();
+        state.sessionStartedAtPerfMs = state.runStartedAtPerfMs;
         await ensureAudioContext();
         await acquireWakeLock();
         stopCurrentSources(audio.ctx.currentTime + 0.01);
@@ -2322,8 +2416,9 @@
         const totalSec = state.durationMin * 60;
         const journeySec = state.durationMode === "infinite" ? DEFAULTS.infiniteJourneySec : totalSec;
         state.sessionIsInfinite = state.durationMode === "infinite";
-        state.sessionStartedAtPerfMs = performance.now();
-        state.endAtPerfMs = state.sessionIsInfinite ? 0 : state.sessionStartedAtPerfMs + totalSec * 1000;
+        state.runStartedAtPerfMs = performance.now();
+        state.sessionStartedAtPerfMs = state.runStartedAtPerfMs;
+        state.endAtPerfMs = state.sessionIsInfinite ? 0 : state.runStartedAtPerfMs + totalSec * 1000;
         els.timeReadout.textContent = state.sessionIsInfinite ? "00:00" : formatTime(totalSec);
         cancelAnimationFrame(state.timerRaf);
         state.timerRaf = requestAnimationFrame(updateCountdownLoop);
@@ -2347,17 +2442,26 @@
 
       async function stopSession() {
         if (!audio.ctx || !state.isPlaying) return;
+        if (state.isPaused && audio.ctx.state === "suspended") {
+          try { await audio.ctx.resume(); } catch (e) {}
+        }
         const now = audio.ctx.currentTime;
         audio.masterSession.gain.cancelScheduledValues(now);
         audio.masterSession.gain.setValueAtTime(audio.masterSession.gain.value, now);
-        audio.masterSession.gain.linearRampToValueAtTime(0.0001, now + 2.0);
+        const fade = state.isPaused ? 0.05 : 2.0;
+        audio.masterSession.gain.linearRampToValueAtTime(0.0001, now + fade);
         if (state.activeEngine === "tinker") {
-          stopTinkerGraph(now + 2.1);
+          stopTinkerGraph(now + fade + 0.1);
         } else {
-          stopCurrentSources(now + 2.1);
+          stopCurrentSources(now + fade + 0.1);
         }
         state.isPlaying = false;
+        state.isPaused = false;
         state.sessionIsInfinite = false;
+        state.elapsedBeforePauseMs = 0;
+        state.runStartedAtPerfMs = 0;
+        state.sessionStartedAtPerfMs = 0;
+        state.endAtPerfMs = 0;
         state.activeEngine = null;
         cancelAnimationFrame(state.timerRaf);
         state.timerRaf = 0;
@@ -2670,10 +2774,12 @@
             els.headphonesHint.classList.remove("hidden");
             window.setTimeout(function () { els.headphonesHint.classList.add("hidden"); }, 4500);
           }
-          if (state.isPlaying) {
-            await stopSession();
-          } else {
+          if (!state.isPlaying) {
             await startSession();
+          } else if (state.isPaused) {
+            await resumeSession();
+          } else {
+            await stopSession();
           }
         });
 
@@ -2697,12 +2803,13 @@
               state.endAtPerfMs = 0;
             } else {
               state.sessionIsInfinite = false;
-              state.endAtPerfMs = state.sessionStartedAtPerfMs + state.durationMin * 60 * 1000;
-              if (state.endAtPerfMs <= performance.now()) {
+              syncEndAtFromElapsed();
+              if (currentElapsedMs() >= state.durationMin * 60 * 1000) {
                 onSessionElapsed();
                 return;
               }
             }
+            updateTimerDisplayFromElapsed();
             syncMediaSessionPosition(true);
           } else {
             els.timeReadout.textContent = state.durationMode === "infinite" ? "∞" : formatTime(state.durationMin * 60);
