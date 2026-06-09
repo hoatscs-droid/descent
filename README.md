@@ -12,11 +12,11 @@ Descent generates layered audio environments — binaural beats, a warm noise be
 
 Descent has three modes:
 
-- **Sit** — one-tap presets for everyday use. *Calm* (theta), *Focus* (alpha), *Drop* (delta, for winding down), and *Lift* (a brighter alpha with a soft shimmer). Pick one, set a timer, press play.
+- **Sit** — one-tap presets for everyday use, organized into three swipeable panes: **Focus**, **Daytime**, and **Deep Sleep**. The library includes alpha-focused work states, theta downshift presets, delta wind-down tones, and speaker-friendly ocean soundscapes.
 - **Explore** — a descent through the brainwave bands, inspired by the Monroe Institute's Gateway "Focus" states (Focus 3 → 10 → 12 → 15 → 21). Hold a single band, or turn on **Journey** and let it glide downward through the ladder over your session, the texture deepening as you go.
 - **Tinker** — a two-oscillator playground. Independent pitch, waveform, lowpass, pan, and volume for each oscillator; a customizable noise bed; and independent pulse depth and rate for both the tone and the noise. Build your own sound and save it as a preset.
 
-A slow breathing circle gives you something to pace your breath to. Sessions fade out gently and end with a soft chime. There's an open-ended (∞) mode if you don't want a timer.
+A slow breathing circle gives you something to pace your breath to. Sessions can be timed or open-ended (∞), fade out gently, and end with a soft chime. On supported browsers, lock-screen media controls can pause and resume without restarting the session.
 
 ---
 
@@ -58,6 +58,13 @@ Descent runs **entirely on your device.** No accounts, no analytics, no servers,
 ## Tech
 
 A single `index.html` — pure HTML, CSS, and JavaScript using the Web Audio API. No frameworks, no build step, no dependencies, no external requests. The whole app is one file you can read top to bottom.
+
+Built with special care for iPhone Safari / installed PWA behavior:
+
+- Audio starts only from a user gesture and resumes the `AudioContext` inside that gesture.
+- The app requests a playback audio session where supported, which helps Web Audio continue when the hardware silent switch is on.
+- A screen Wake Lock keeps sessions from being interrupted while the app is visible.
+- Timers use elapsed-time accounting rather than trusting `setInterval`, so pause/resume and duration changes stay accurate.
 
 ---
 
