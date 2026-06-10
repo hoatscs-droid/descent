@@ -85,8 +85,16 @@
       border: 1px solid rgba(255,255,255,0.14);
       display: grid;
       place-items: center;
-      animation: breathe 10s cubic-bezier(0.45, 0, 0.55, 1) infinite;
+      opacity: 0.9;
+      transform: scale(1);
+      box-shadow:
+        0 0 60px rgba(121, 183, 168, 0.16),
+        0 0 130px rgba(121, 183, 168, 0.07),
+        inset 0 0 36px rgba(121, 183, 168, 0.07);
       transform-origin: center;
+    }
+    body.session-playing .breath {
+      animation: breathe 10s cubic-bezier(0.45, 0, 0.55, 1) infinite;
       will-change: transform, box-shadow, opacity;
     }
     @keyframes breathe {
@@ -109,8 +117,11 @@
     }
     @media (prefers-reduced-motion: reduce) {
       .breath {
-        animation: breatheStill 10s ease-in-out infinite;
+        animation: none;
         will-change: opacity;
+      }
+      body.session-playing .breath {
+        animation: breatheStill 10s ease-in-out infinite;
       }
       @keyframes breatheStill {
         0%, 100% {
@@ -1130,6 +1141,10 @@
         state.endAtPerfMs = state.sessionIsInfinite ? 0 : performance.now() + currentRemainingMs();
       }
 
+      function syncBreathAnimation() {
+        document.body.classList.toggle("session-playing", state.isPlaying && !state.isPaused);
+      }
+
       function syncMediaSessionPosition(force) {
         if (!("mediaSession" in navigator) || typeof navigator.mediaSession.setPositionState !== "function") return;
         if (!state.isPlaying) return;
@@ -2073,6 +2088,7 @@
         state.activeEngine = null;
         cancelAnimationFrame(state.timerRaf);
         state.timerRaf = 0;
+        syncBreathAnimation();
         els.playBtn.textContent = "Play";
         els.playBtn.classList.remove("stop");
         syncMediaSessionPlaybackState("paused");
@@ -2258,6 +2274,7 @@
         state.activeEngine = null;
         cancelAnimationFrame(state.timerRaf);
         state.timerRaf = 0;
+        syncBreathAnimation();
         els.timeReadout.textContent = "00:00";
         els.playBtn.textContent = "Play";
         els.playBtn.classList.remove("stop");
@@ -2425,6 +2442,7 @@
         cancelAnimationFrame(state.timerRaf);
         state.timerRaf = 0;
         updateTimerDisplayFromElapsed();
+        syncBreathAnimation();
         els.playBtn.textContent = "Play";
         els.playBtn.classList.remove("stop");
         syncMediaSessionPlaybackState("paused");
@@ -2442,6 +2460,7 @@
         syncEndAtFromElapsed();
         syncMediaSessionPlaybackState("playing");
         syncMediaSessionPosition(true);
+        syncBreathAnimation();
 
         const now = audio.ctx.currentTime;
         audio.masterSession.gain.cancelScheduledValues(now);
@@ -2502,6 +2521,7 @@
         }
 
         state.isPlaying = true;
+        syncBreathAnimation();
         els.playBtn.textContent = "Stop";
         els.playBtn.classList.add("stop");
         syncMediaSessionMetadata();
@@ -2534,6 +2554,7 @@
         state.activeEngine = null;
         cancelAnimationFrame(state.timerRaf);
         state.timerRaf = 0;
+        syncBreathAnimation();
         els.playBtn.textContent = "Play";
         els.playBtn.classList.remove("stop");
         syncMediaSessionPlaybackState("paused");
@@ -3041,6 +3062,7 @@
         setupSitPager();
         setupTinkerPager();
         scrollSitToSelected("auto");
+        syncBreathAnimation();
       }
 
       loadState();
