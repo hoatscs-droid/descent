@@ -107,6 +107,22 @@
           inset 0 0 60px rgba(121, 183, 168, 0.10);
       }
     }
+    @media (prefers-reduced-motion: reduce) {
+      .breath {
+        animation: breatheStill 10s ease-in-out infinite;
+        will-change: opacity;
+      }
+      @keyframes breatheStill {
+        0%, 100% {
+          opacity: 0.78;
+          transform: scale(1);
+        }
+        50% {
+          opacity: 1;
+          transform: scale(1);
+        }
+      }
+    }
     .time { font-size: 1.7rem; font-weight: 600; letter-spacing: 0.03em; }
     .mode-tabs, .duration-row {
       display: grid;
@@ -716,6 +732,11 @@
         <button class="dur-btn" data-min="infinite">∞</button>
       </div>
 
+      <div class="row">
+        <span>Keep screen awake</span>
+        <label><input type="checkbox" id="keepAwake" checked> On</label>
+      </div>
+
       <button class="play" id="playBtn">Play</button>
       <div class="small">Best with headphones.</div>
     </section>
@@ -787,6 +808,7 @@
         timeReadout: document.getElementById("timeReadout"),
         masterVolume: document.getElementById("masterVolume"),
         masterVal: document.getElementById("masterVal"),
+        keepAwake: document.getElementById("keepAwake"),
         durationRow: document.getElementById("durationRow"),
         sitSwipe: document.getElementById("sitSwipe"),
         sitDots: document.getElementById("sitDots"),
@@ -864,6 +886,7 @@
         durationMin: 10,
         durationMode: "timed",
         masterVol: 0.65,
+        keepAwake: true,
         isPlaying: false,
         isPaused: false,
         sessionIsInfinite: false,
@@ -1018,6 +1041,7 @@
           durationMin: state.durationMin,
           durationMode: state.durationMode,
           masterVol: state.masterVol,
+          keepAwake: state.keepAwake,
           customPresets: state.customPresets,
           tinker: state.tinker
         };
@@ -1037,6 +1061,7 @@
           if ([5,10,15,20,30].includes(s.durationMin)) state.durationMin = s.durationMin;
           if (s.durationMode === "infinite" || s.durationMode === "timed") state.durationMode = s.durationMode;
           if (typeof s.masterVol === "number") state.masterVol = Math.max(0, Math.min(1, s.masterVol));
+          if (typeof s.keepAwake === "boolean") state.keepAwake = s.keepAwake;
           state.tinker = normalizeTinkerState(s.tinker);
           state.customPresets = Array.isArray(s.customPresets) ? s.customPresets.map(normalizePreset).filter(Boolean) : [];
         } catch (e) {
@@ -1114,16 +1139,16 @@
           }
           return;
         }
-        const nowMs = performance.now();
-        if (!force && nowMs - state.lastMediaPositionSyncMs < 4000) return;
         const duration = state.durationMin * 60;
         const elapsed = Math.min(duration, Math.max(0, currentElapsedMs() / 1000));
         if (!isFinite(duration) || duration <= 0 || !isFinite(elapsed) || elapsed < 0 || elapsed > duration) return;
+        const nowMs = performance.now();
+        if (!force && nowMs - state.lastMediaPositionSyncMs < 4000) return;
         state.lastMediaPositionSyncMs = nowMs;
         try {
           navigator.mediaSession.setPositionState({
             duration: duration,
-            playbackRate: 1,
+            playbackRate: state.isPaused ? 0 : 1,
             position: elapsed
           });
         } catch (e) {}
@@ -2126,6 +2151,10 @@
 
       async function acquireWakeLock() {
         try {
+          if (!state.keepAwake) {
+            await releaseWakeLock();
+            return;
+          }
           if (!("wakeLock" in navigator)) return;
           state.wakeLock = await navigator.wakeLock.request("screen");
         } catch (e) {}
@@ -2143,7 +2172,7 @@
           try {
             if (navigator.audioSession) navigator.audioSession.type = "playback";
           } catch (e) {}
-          if (state.wakeLock !== null) acquireWakeLock();
+          if (state.wakeLock !== null && state.keepAwake) acquireWakeLock();
           if (state.isPlaying && !state.isPaused) {
             syncMediaSessionPlaybackState("playing");
             syncMediaSessionPosition(true);
@@ -2213,20 +2242,12 @@
         state.timerRaf = requestAnimationFrame(updateCountdownLoop);
       }
 
-      function onSessionElapsed() {
-        if (!state.isPlaying || !audio.ctx) return;
-        const ctx = audio.ctx;
-        const now = ctx.currentTime;
-        audio.masterSession.gain.cancelScheduledValues(now);
-        audio.masterSession.gain.setValueAtTime(audio.masterSession.gain.value, now);
-        audio.masterSession.gain.linearRampToValueAtTime(0.0001, now + 3.0);
-        if (state.activeEngine === "tinker") {
-          stopTinkerGraph(now + 3.1);
-          if (state.mode !== "tinker") playSoftChime(now + 3.0);
-        } else {
-          stopCurrentSources(now + 3.1);
-          playSoftChime(now + 3.0);
-        }
+      function isActiveSleepPreset() {
+        if (state.mode !== "sit") return false;
+        return getSitGroup(getSitPreset(state.selectedSit)) === "sleep";
+      }
+
+      function finishElapsedSessionState() {
         state.isPlaying = false;
         state.isPaused = false;
         state.sessionIsInfinite = false;
@@ -2237,10 +2258,58 @@
         state.activeEngine = null;
         cancelAnimationFrame(state.timerRaf);
         state.timerRaf = 0;
+        els.timeReadout.textContent = "00:00";
         els.playBtn.textContent = "Play";
         els.playBtn.classList.remove("stop");
         syncMediaSessionPlaybackState("paused");
         releaseWakeLock();
+        saveState();
+      }
+
+      function onSessionElapsed() {
+        if (!state.isPlaying || !audio.ctx) return;
+        const ctx = audio.ctx;
+        const now = ctx.currentTime;
+        if (state.isPaused) {
+          try {
+            if (state.activeEngine === "tinker") {
+              stopTinkerGraph(now);
+            } else {
+              stopCurrentSources(now);
+            }
+          } catch (e) {}
+          finishElapsedSessionState();
+          try {
+            if (ctx.state === "suspended") {
+              ctx.resume()
+                .then(function () {
+                  if (audio.ctx === ctx && !state.isPlaying && ctx.state !== "closed") {
+                    ctx.suspend().catch(function () {});
+                  }
+                })
+                .catch(function () {});
+            }
+          } catch (e) {}
+          return;
+        }
+        const sleepEnding = isActiveSleepPreset();
+        const fade = sleepEnding ? 30.0 : 3.0;
+        audio.masterSession.gain.cancelScheduledValues(now);
+        audio.masterSession.gain.setValueAtTime(audio.masterSession.gain.value, now);
+        audio.masterSession.gain.linearRampToValueAtTime(0.0001, now + fade);
+        if (state.activeEngine === "tinker") {
+          stopTinkerGraph(now + fade + 0.1);
+          if (!sleepEnding && state.mode !== "tinker") playSoftChime(now + fade);
+        } else {
+          stopCurrentSources(now + fade + 0.1);
+          if (!sleepEnding) playSoftChime(now + fade);
+        }
+        if (sleepEnding) {
+          window.setTimeout(function () {
+            if (audio.ctx && audio.ctx.state !== "closed") audio.ctx.suspend().catch(function () {});
+          }, 32000);
+        }
+        finishElapsedSessionState();
       }
 
       function playSoftChime(atTime) {
@@ -2371,18 +2440,18 @@
         state.isPaused = false;
         state.runStartedAtPerfMs = performance.now();
         syncEndAtFromElapsed();
+        syncMediaSessionPlaybackState("playing");
+        syncMediaSessionPosition(true);
 
         const now = audio.ctx.currentTime;
         audio.masterSession.gain.cancelScheduledValues(now);
-        audio.masterSession.gain.setValueAtTime(0.0001, now);
+        audio.masterSession.gain.setValueAtTime(Math.max(0.0001, audio.masterSession.gain.value), now);
         audio.masterSession.gain.linearRampToValueAtTime(1.0, now + 0.6);
 
         cancelAnimationFrame(state.timerRaf);
         state.timerRaf = requestAnimationFrame(updateCountdownLoop);
         els.playBtn.textContent = "Stop";
         els.playBtn.classList.add("stop");
-        syncMediaSessionPlaybackState("playing");
-        syncMediaSessionPosition(true);
         saveState();
       }
 
@@ -2594,6 +2663,7 @@
             ? (p.beat > 0 ? p.beat + " Hz + waves" : "ocean waves")
             : p.beat + " Hz · " + p.band;
           b.className = "tile" + (p.id === state.selectedSit ? " sel" : "");
+          b.setAttribute("aria-pressed", p.id === state.selectedSit ? "true" : "false");
           b.innerHTML = "<strong>" + p.name + "</strong><span>" + detail + "</span><span>" + p.note + "</span>" + (speakerFriendly ? '<span class="tag">speaker-friendly</span>' : "");
           b.addEventListener("click", function () {
             selectSitPreset(p);
@@ -2665,6 +2735,7 @@
             const edit = document.createElement("button");
             const del = document.createElement("button");
             use.textContent = "Use";
+            use.setAttribute("aria-pressed", p.id === state.selectedSit ? "true" : "false");
             edit.textContent = "Edit";
             del.textContent = "Delete";
             use.addEventListener("click", function () {
@@ -2698,6 +2769,7 @@
         EXPLORE_PRESETS.forEach(function (p) {
           const b = document.createElement("button");
           b.className = "tile" + (p.id === state.selectedExplore ? " sel" : "");
+          b.setAttribute("aria-pressed", p.id === state.selectedExplore ? "true" : "false");
           b.innerHTML = "<strong>" + p.name + "</strong><span>" + p.beat + " Hz · " + p.band + "</span><span>" + p.state + "</span>";
           b.addEventListener("click", function () {
             state.selectedExplore = p.id;
@@ -2785,6 +2857,16 @@
 
         els.masterVolume.addEventListener("input", function () {
           setMasterVolume(Number(els.masterVolume.value));
+        });
+
+        els.keepAwake.addEventListener("change", async function () {
+          state.keepAwake = els.keepAwake.checked;
+          if (!state.keepAwake) {
+            await releaseWakeLock();
+          } else if (state.isPlaying && !state.isPaused) {
+            await acquireWakeLock();
+          }
+          saveState();
         });
 
         els.durationRow.addEventListener("click", function (e) {
@@ -2946,6 +3028,7 @@
         renderExploreTiles();
         els.masterVolume.value = String(state.masterVol);
         els.masterVal.textContent = state.masterVol.toFixed(2);
+        els.keepAwake.checked = state.keepAwake;
         els.durationRow.querySelectorAll(".dur-btn").forEach(function (b) {
           const isActive = state.durationMode === "infinite" ? b.dataset.min === "infinite" : Number(b.dataset.min) === state.durationMin;
           b.classList.toggle("active", isActive);
