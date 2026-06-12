@@ -478,6 +478,49 @@
       display: grid;
       gap: 6px;
     }
+    .precision-stepper-row {
+      display: grid;
+      grid-template-columns: 42px minmax(0, 1fr) 42px;
+      align-items: center;
+      gap: 8px;
+    }
+    .precision-stepper {
+      min-width: 40px;
+      min-height: 40px;
+      border: 1px solid rgba(255,255,255,0.12);
+      background: rgba(255,255,255,0.03);
+      color: var(--muted);
+      border-radius: 999px;
+      padding: 0;
+      line-height: 1;
+      font-size: 1rem;
+      user-select: none;
+      -webkit-user-select: none;
+      touch-action: manipulation;
+      transition: background 160ms ease, border-color 160ms ease, color 160ms ease, transform 120ms ease;
+    }
+    .precision-stepper:active {
+      color: var(--text);
+      border-color: rgba(121,183,168,0.50);
+      background: var(--accent-soft);
+      transform: scale(0.96);
+    }
+    .tinker-value {
+      color: rgba(232,230,221,0.88);
+      border-bottom: 1px solid rgba(121,183,168,0.34);
+      cursor: text;
+      padding-bottom: 1px;
+    }
+    .tinker-value.editing {
+      border-bottom-color: transparent;
+    }
+    .exact-value-input {
+      width: 86px;
+      min-width: 0;
+      padding: 4px 6px;
+      font-size: 0.9rem;
+      text-align: right;
+    }
     .tinker-footer {
       display: grid;
       gap: 12px;
@@ -1702,6 +1745,205 @@
       const HZ_MIN = 0.05, HZ_MAX = 8;
       const sliderToHz = function (s) { return HZ_MIN * Math.pow(HZ_MAX / HZ_MIN, Number(s)); };
       const hzToSlider = function (hz) { return Math.log(hz / HZ_MIN) / Math.log(HZ_MAX / HZ_MIN); };
+
+      function clampValue(value, min, max) {
+        return Math.max(min, Math.min(max, value));
+      }
+
+      function getTinkerPrecisionControls() {
+        return [
+          { id: "oscAPitch", label: "Osc A pitch", slider: els.oscAPitch, readout: els.oscAPitchVal, min: 20, max: 2000, step: 0.5, decimals: 2, scale: "log" },
+          { id: "oscALowpass", label: "Osc A lowpass", slider: els.oscALowpass, readout: els.oscALowpassVal, min: 200, max: 20000, step: 100, decimals: 0, scale: "log" },
+          { id: "oscAPan", label: "Osc A pan", slider: els.oscAPan, readout: els.oscAPanVal, min: -1, max: 1, step: 0.05, decimals: 2, scale: "linear" },
+          { id: "oscAVolume", label: "Osc A volume", slider: els.oscAVolume, readout: els.oscAVolumeVal, min: 0, max: 1, step: 0.02, decimals: 2, scale: "linear" },
+          { id: "oscBPitch", label: "Osc B pitch", slider: els.oscBPitch, readout: els.oscBPitchVal, min: 20, max: 2000, step: 0.5, decimals: 2, scale: "log" },
+          { id: "oscBLowpass", label: "Osc B lowpass", slider: els.oscBLowpass, readout: els.oscBLowpassVal, min: 200, max: 20000, step: 100, decimals: 0, scale: "log" },
+          { id: "oscBPan", label: "Osc B pan", slider: els.oscBPan, readout: els.oscBPanVal, min: -1, max: 1, step: 0.05, decimals: 2, scale: "linear" },
+          { id: "oscBVolume", label: "Osc B volume", slider: els.oscBVolume, readout: els.oscBVolumeVal, min: 0, max: 1, step: 0.02, decimals: 2, scale: "linear" },
+          { id: "noiseWidth", label: "Noise stereo width", slider: els.noiseWidth, readout: els.noiseWidthVal, min: 0, max: 1, step: 0.05, decimals: 2, scale: "linear" },
+          { id: "noiseLowpass", label: "Noise lowpass", slider: els.noiseLowpass, readout: els.noiseLowpassVal, min: 200, max: 20000, step: 100, decimals: 0, scale: "log" },
+          { id: "noiseLevel", label: "Noise volume", slider: els.noiseLevel, readout: els.noiseLevelVal, min: 0, max: 0.5, step: 0.01, decimals: 2, scale: "linear" },
+          { id: "pulseToneDepth", label: "Tone pulse depth", slider: els.pulseToneDepth, readout: els.pulseToneDepthVal, min: 0, max: 0.6, step: 0.01, decimals: 2, scale: "linear" },
+          { id: "pulseToneRate", label: "Tone pulse rate", slider: els.pulseToneRate, readout: els.pulseToneRateVal, min: HZ_MIN, max: HZ_MAX, step: 0.05, decimals: 2, unit: " Hz", scale: "pulse" },
+          { id: "pulseNoiseDepth", label: "Noise pulse depth", slider: els.pulseNoiseDepth, readout: els.pulseNoiseDepthVal, min: 0, max: 0.6, step: 0.01, decimals: 2, scale: "linear" },
+          { id: "pulseNoiseRate", label: "Noise pulse rate", slider: els.pulseNoiseRate, readout: els.pulseNoiseRateVal, min: HZ_MIN, max: HZ_MAX, step: 0.05, decimals: 2, unit: " Hz", scale: "pulse" }
+        ];
+      }
+
+      function realValueFromTinkerSlider(meta) {
+        if (meta.scale === "log") return logSliderToValue(meta.slider.value, meta.min, meta.max);
+        if (meta.scale === "pulse") return sliderToHz(meta.slider.value);
+        return Number(meta.slider.value);
+      }
+
+      function sliderValueFromReal(meta, value) {
+        const v = clampValue(value, meta.min, meta.max);
+        if (meta.scale === "log") return valueToLogSlider(v, meta.min, meta.max);
+        if (meta.scale === "pulse") return hzToSlider(v);
+        return v;
+      }
+
+      function stepControl(sliderEl, newSliderValue) {
+        sliderEl.value = String(newSliderValue);
+        sliderEl.dispatchEvent(new Event("input", { bubbles: true }));
+      }
+
+      function applyTinkerPrecisionValue(meta, realValue) {
+        if (!Number.isFinite(realValue)) {
+          updateTinkerReadouts();
+          return;
+        }
+        stepControl(meta.slider, sliderValueFromReal(meta, realValue));
+      }
+
+      function stepTinkerPrecisionControl(meta, direction) {
+        const current = realValueFromTinkerSlider(meta);
+        const next = clampValue(current + direction * meta.step, meta.min, meta.max);
+        applyTinkerPrecisionValue(meta, next);
+      }
+
+      function bindTinkerStepper(btn, meta, direction) {
+        let holdTimer = 0;
+        let repeatTimer = 0;
+        let fastTimer = 0;
+        function clearRepeat() {
+          window.clearTimeout(holdTimer);
+          window.clearTimeout(fastTimer);
+          window.clearInterval(repeatTimer);
+          holdTimer = 0;
+          fastTimer = 0;
+          repeatTimer = 0;
+        }
+        btn.addEventListener("pointerdown", function (e) {
+          e.preventDefault();
+          clearRepeat();
+          stepTinkerPrecisionControl(meta, direction);
+          holdTimer = window.setTimeout(function () {
+            repeatTimer = window.setInterval(function () {
+              stepTinkerPrecisionControl(meta, direction);
+            }, 120);
+            fastTimer = window.setTimeout(function () {
+              window.clearInterval(repeatTimer);
+              repeatTimer = window.setInterval(function () {
+                stepTinkerPrecisionControl(meta, direction);
+              }, 50);
+            }, 1600);
+          }, 400);
+        });
+        ["pointerup", "pointercancel", "pointerleave", "lostpointercapture"].forEach(function (eventName) {
+          btn.addEventListener(eventName, clearRepeat);
+        });
+        btn.addEventListener("click", function (e) { e.preventDefault(); });
+      }
+
+      function restoreExactReadout(readout) {
+        const exactInput = readout.nextElementSibling;
+        if (exactInput && exactInput.classList && exactInput.classList.contains("exact-value-input")) {
+          exactInput.remove();
+        }
+        readout.style.display = "";
+        readout.classList.remove("editing");
+        updateTinkerReadouts();
+        window.setTimeout(updateTinkerReadouts, 0);
+      }
+
+      function beginTinkerExactEntry(meta) {
+        const readout = meta.readout;
+        const staleInput = readout && readout.nextElementSibling && readout.nextElementSibling.classList && readout.nextElementSibling.classList.contains("exact-value-input")
+          ? readout.nextElementSibling
+          : null;
+        if (readout && readout.classList.contains("editing") && !staleInput) {
+          readout.classList.remove("editing");
+          readout.style.display = "";
+        }
+        if (!readout || readout.classList.contains("editing")) return;
+        const input = document.createElement("input");
+        let finished = false;
+        input.type = "text";
+        input.inputMode = "decimal";
+        input.className = "exact-value-input";
+        input.value = realValueFromTinkerSlider(meta).toFixed(meta.decimals);
+        input.setAttribute("aria-label", "Exact value for " + meta.label);
+        readout.classList.add("editing");
+        readout.style.display = "none";
+        readout.insertAdjacentElement("afterend", input);
+        function finish(commit) {
+          if (finished) return;
+          finished = true;
+          if (commit) {
+            const parsed = Number.parseFloat(input.value.replace(",", "."));
+            if (Number.isFinite(parsed)) {
+              applyTinkerPrecisionValue(meta, parsed);
+              restoreExactReadout(readout);
+            } else {
+              restoreExactReadout(readout);
+            }
+          } else {
+            restoreExactReadout(readout);
+          }
+          readout.classList.remove("editing");
+        }
+        input.addEventListener("keydown", function (e) {
+          if (e.key === "Enter") {
+            e.preventDefault();
+            finish(true);
+          } else if (e.key === "Escape") {
+            e.preventDefault();
+            finish(false);
+          }
+        });
+        input.addEventListener("change", function () { finish(true); });
+        input.addEventListener("blur", function () { finish(true); });
+        window.setTimeout(function () {
+          input.focus();
+          input.select();
+        }, 0);
+      }
+
+      function setupTinkerPrecisionControls() {
+        getTinkerPrecisionControls().forEach(function (meta) {
+          const slider = meta.slider;
+          const readout = meta.readout;
+          if (!slider || !readout) return;
+          slider.step = "any";
+          readout.classList.add("tinker-value");
+          readout.tabIndex = 0;
+          readout.setAttribute("role", "button");
+          readout.setAttribute("aria-label", "Edit exact value for " + meta.label);
+          readout.title = "Tap to type exact value";
+          if (!readout.dataset.precisionBound) {
+            readout.addEventListener("click", function () { beginTinkerExactEntry(meta); });
+            readout.addEventListener("keydown", function (e) {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                beginTinkerExactEntry(meta);
+              }
+            });
+            readout.dataset.precisionBound = "true";
+          }
+          if (slider.dataset.stepperBound) return;
+          const parent = slider.parentNode;
+          const row = document.createElement("div");
+          const minus = document.createElement("button");
+          const plus = document.createElement("button");
+          row.className = "precision-stepper-row";
+          minus.type = "button";
+          plus.type = "button";
+          minus.className = "precision-stepper";
+          plus.className = "precision-stepper";
+          minus.textContent = "-";
+          plus.textContent = "+";
+          minus.setAttribute("aria-label", "Decrease " + meta.label);
+          plus.setAttribute("aria-label", "Increase " + meta.label);
+          parent.insertBefore(row, slider);
+          row.appendChild(minus);
+          row.appendChild(slider);
+          row.appendChild(plus);
+          bindTinkerStepper(minus, meta, -1);
+          bindTinkerStepper(plus, meta, 1);
+          slider.dataset.stepperBound = "true";
+        });
+      }
 
       function updateToggleButton(btn, on) {
         btn.textContent = on ? "On" : "Off";
@@ -3059,6 +3301,7 @@
         els.exploreNoiseLevelVal.textContent = Number(els.exploreNoiseLevel.value).toFixed(2);
         updateTinkerReadouts();
         updateEditBanner();
+        setupTinkerPrecisionControls();
         setupSitPager();
         setupTinkerPager();
         scrollSitToSelected("auto");
