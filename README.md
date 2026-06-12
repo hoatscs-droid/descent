@@ -4,6 +4,10 @@
 
 🎧 **[Try it live →](https://hoatscs-droid.github.io/descent)** *(best with headphones)*
 
+![Descent — Sit](screenshots/sit.png)
+![Descent — Explore](screenshots/explore.png)
+![Descent — Deep Sleep](screenshots/sleep.png)
+
 Descent generates layered audio environments — binaural beats, a warm noise bed, and slow amplitude modulation — designed as a space for relaxation and focus. It runs on any phone or computer, installs to your home screen like an app, and works fully offline. Everything happens on your device; nothing is ever sent anywhere.
 
 ---
@@ -14,9 +18,9 @@ Descent has three modes:
 
 - **Sit** — one-tap presets for everyday use, organized into three swipeable panes: **Focus**, **Daytime**, and **Deep Sleep**. The library includes alpha-focused work states, theta downshift presets, delta wind-down tones, and speaker-friendly ocean soundscapes.
 - **Explore** — a descent through the brainwave bands, inspired by the Monroe Institute's Gateway "Focus" states (Focus 3 → 10 → 12 → 15 → 21). Hold a single band, or turn on **Journey** and let it glide downward through the ladder over your session, the texture deepening as you go.
-- **Tinker** — a two-oscillator playground. Independent pitch, waveform, lowpass, pan, and volume for each oscillator; a customizable noise bed; and independent pulse depth and rate for both the tone and the noise. Build your own sound and save it as a preset.
+- **Tinker** — a two-oscillator playground. Independent pitch, waveform, lowpass, pan, and volume for each oscillator; a customizable noise bed; and independent pulse depth and rate for both the tone and the noise. Fine-adjust − / + steppers with hold-to-repeat and tap-to-type readouts make precise tuning practical on a phone. Build your own sound and save it as a preset.
 
-A slow breathing circle gives you something to pace your breath to. Sessions can be timed or open-ended (∞), fade out gently, and end with a soft chime. On supported browsers, lock-screen media controls can pause and resume without restarting the session.
+A slow breathing circle gives you something to pace your breath to while a session is playing. Sessions can be timed, adjusted live, or open-ended (∞). Non-sleep sessions fade out gently and end with a soft chime; Deep Sleep sessions use a long ~30s fade with no chime. A **Keep screen awake** toggle is on by default for focused sessions and can be turned off for all-night sleep sessions. On supported browsers, lock-screen and AirPods media controls can truly pause and resume, preserving elapsed time and audio position instead of restarting the session.
 
 ---
 
@@ -63,8 +67,9 @@ Built with special care for iPhone Safari / installed PWA behavior:
 
 - Audio starts only from a user gesture and resumes the `AudioContext` inside that gesture.
 - The app requests a playback audio session where supported, which helps Web Audio continue when the hardware silent switch is on.
-- A screen Wake Lock keeps sessions from being interrupted while the app is visible.
-- Timers use elapsed-time accounting rather than trusting `setInterval`, so pause/resume and duration changes stay accurate.
+- A screen Wake Lock keeps sessions from being interrupted while the app is visible, controlled by the in-app **Keep screen awake** toggle.
+- Timers use elapsed-time accounting rather than trusting `setInterval`, so pause/resume, lock-screen media controls, and duration changes stay accurate.
+- Reduced-motion support respects `prefers-reduced-motion`.
 
 ---
 
