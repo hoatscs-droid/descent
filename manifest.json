@@ -1,15 +1,23 @@
 {
+  "id": "./",
   "name": "Descent",
   "short_name": "Descent",
-  "start_url": "./index.html",
+  "description": "A private, offline binaural meditation instrument for sitting, exploring, and sound design.",
+  "lang": "en",
+  "dir": "ltr",
+  "start_url": "./",
+  "scope": "./",
   "display": "standalone",
+  "orientation": "portrait-primary",
   "background_color": "#0e0e12",
   "theme_color": "#0e0e12",
+  "categories": ["health", "lifestyle", "music"],
   "icons": [
     {
       "src": "icon-512.png",
       "sizes": "512x512",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any"
     }
   ]
 }

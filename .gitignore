@@ -1,0 +1,5 @@
+.DS_Store
+.playwright-cli/
+.codex/
+design-qa.md
+*.log

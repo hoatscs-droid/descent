@@ -10,13 +10,13 @@
   <link rel="apple-touch-icon" href="icon-512.png">
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#0e0e12">
-  <meta name="description" content="A warm, minimal binaural meditation PWA.">
+  <meta name="description" content="A private, offline binaural meditation instrument for sitting, exploring, and sound design.">
   <meta property="og:title" content="Descent">
-  <meta property="og:description" content="A warm, minimal binaural meditation PWA.">
+  <meta property="og:description" content="A private, offline binaural meditation instrument for sitting, exploring, and sound design.">
   <meta property="og:image" content="icon-512.png">
   <meta name="twitter:card" content="summary">
   <meta name="twitter:title" content="Descent">
-  <meta name="twitter:description" content="A warm, minimal binaural meditation PWA.">
+  <meta name="twitter:description" content="A private, offline binaural meditation instrument for sitting, exploring, and sound design.">
   <meta name="twitter:image" content="icon-512.png">
   <title>Descent</title>
   <style>
@@ -35,6 +35,7 @@
       --serif: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
       --ease: cubic-bezier(0.4,0,0.2,1);
       --card: rgba(255,255,255,0.035);
+      --card-2: rgba(255,255,255,0.016);
       --hair: rgba(255,255,255,0.12);
       --faint: rgba(232,230,221,0.46);
     }
@@ -78,39 +79,87 @@
       transition: opacity 2s cubic-bezier(0.4,0,0.2,1);
     }
     .header {
-      padding-top: 10px;
+      padding-top: 12px;
       display: flex;
       justify-content: space-between;
       align-items: center;
     }
-    .title { font-size: 1.1rem; letter-spacing: 0.08em; font-weight: 600; text-transform: uppercase; }
+    .brand {
+      display: grid;
+      justify-items: center;
+      gap: 7px;
+      padding: 10px 0 0;
+    }
+    .title {
+      font-size: 1.72rem;
+      letter-spacing: 0.34em;
+      font-weight: 400;
+      text-transform: uppercase;
+      text-indent: 0.34em;
+    }
+    .brand-subtitle {
+      color: var(--faint);
+      font-size: 0.58rem;
+      letter-spacing: 0.32em;
+      text-transform: uppercase;
+      text-indent: 0.32em;
+    }
+    .utility-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 14px;
+      padding: 8px 0 10px;
+      border-bottom: 1px solid rgba(255,255,255,0.07);
+    }
+    .utility-left {
+      display: inline-flex;
+      align-items: center;
+      gap: 12px;
+    }
     .gear {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
       background: transparent;
-      border: 1px solid rgba(255,255,255,0.12);
+      border: 0;
       color: var(--muted);
-      border-radius: 999px;
-      width: 34px; height: 34px;
-      font-size: 16px;
+      padding: 6px 2px;
+      font-size: 0.72rem;
+    }
+    .utility-icon {
+      width: 18px;
+      height: 18px;
+      object-fit: contain;
+      filter: invert(88%);
+      opacity: 0.82;
     }
     .info-links {
       display: flex;
       justify-content: flex-end;
-      gap: 12px;
-      margin-top: -8px;
+      align-items: center;
+      gap: 16px;
+      margin-top: 0;
     }
     .info-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
       border: 0;
       background: transparent;
       color: var(--muted);
-      padding: 4px 2px;
-      font-size: 0.82rem;
-      text-decoration: underline;
-      text-decoration-color: rgba(255,255,255,0.18);
-      transition: color 180ms ease, text-decoration-color 180ms ease;
+      padding: 6px 2px;
+      font-size: 0.72rem;
+      letter-spacing: 0.04em;
+      transition: color 180ms ease;
     }
     .info-btn:active {
       color: var(--text);
-      text-decoration-color: color-mix(in srgb, var(--accent) 50%, transparent);
+    }
+    #ringerHint { display: none !important; }
+    .breath-wrap {
+      min-height: 330px;
+      padding: 2px 0 10px;
     }
     .notice {
       background: rgba(255,255,255,0.06);
@@ -122,16 +171,11 @@
       line-height: 1.35;
     }
     .hidden { display: none !important; }
-    .breath-wrap {
-      display: grid;
-      place-items: center;
-      padding: 8px 0 4px;
-      min-height: 210px;
-    }
+    .breath-wrap { display: grid; place-items: center; }
     .breath {
       position: relative;
-      width: min(58vw, 210px);
-      height: min(58vw, 210px);
+      width: min(82vw, 320px);
+      height: min(82vw, 320px);
       border-radius: 50%;
       display: grid;
       place-items: center;
@@ -144,7 +188,7 @@
       height: 100%;
       border-radius: 50%;
       transform: translate(-50%, -50%);
-      filter: drop-shadow(0 0 34px var(--glow));
+      filter: drop-shadow(0 0 42px var(--glow));
       opacity: 0.94;
     }
     .orb-hit {
@@ -164,9 +208,9 @@
     .time {
       position: relative;
       z-index: 3;
-      font-size: 1.7rem;
-      font-weight: 600;
-      letter-spacing: 0.03em;
+      font-size: 2rem;
+      font-weight: 400;
+      letter-spacing: 0.06em;
       color: var(--text);
       text-shadow: 0 2px 18px rgba(0,0,0,0.55);
       pointer-events: none;
@@ -178,24 +222,41 @@
     .mode-tabs {
       position: relative;
       grid-template-columns: repeat(3, minmax(0, 1fr));
-      background: rgba(0,0,0,0.28);
-      border: 1px solid var(--hair);
-      border-radius: 999px;
-      padding: 4px;
+      background: transparent;
+      border: 0;
+      border-bottom: 1px solid rgba(255,255,255,0.10);
+      border-radius: 0;
+      padding: 0;
       gap: 0;
       overflow: hidden;
+    }
+    .reset-island {
+      border: 1px solid rgba(255,255,255,0.10);
+      border-radius: 999px;
+      background: rgba(255,255,255,0.025);
+      color: var(--muted);
+      padding: 5px 10px;
+      font-size: 0.68rem;
+      letter-spacing: 0.03em;
+      transition: color 180ms var(--ease), border-color 180ms var(--ease), background 180ms var(--ease);
+    }
+    .reset-island:active {
+      color: var(--text);
+      border-color: color-mix(in srgb, var(--accent) 35%, transparent);
+      background: color-mix(in srgb, var(--accent) 8%, var(--panel));
     }
     .duration-row { grid-template-columns: repeat(6, minmax(0, 1fr)); }
     #tabGlide {
       position: absolute;
       z-index: 1;
-      top: 4px;
-      bottom: 4px;
-      left: 4px;
-      width: calc((100% - 8px) / 3);
+      top: auto;
+      bottom: -1px;
+      left: 0;
+      width: calc(100% / 3);
+      height: 2px;
       border-radius: 999px;
-      background: linear-gradient(180deg, var(--accent), var(--glow));
-      box-shadow: 0 2px 18px -2px var(--glow);
+      background: var(--accent);
+      box-shadow: 0 0 12px var(--glow);
       transition: transform 0.34s var(--ease), background 1.2s var(--ease), box-shadow 1.2s var(--ease);
       pointer-events: none;
     }
@@ -218,7 +279,9 @@
       z-index: 2;
       border: 0;
       background: transparent;
-      padding: 9px 0;
+      padding: 14px 0 13px;
+      letter-spacing: 0.13em;
+      text-transform: uppercase;
       transition: color 0.3s var(--ease);
     }
     .active {
@@ -227,7 +290,7 @@
       background: var(--accent-soft);
     }
     .tab.active {
-      color: #0c100f;
+      color: var(--text);
       background: transparent;
       font-weight: 600;
       box-shadow: none;
@@ -363,6 +426,233 @@
       z-index: 1;
     }
     .preset-tile > * { position: relative; z-index: 1; }
+    #mode-explore {
+      background: transparent;
+      border: 0;
+      padding: 0;
+      gap: 12px;
+    }
+    .tiles.explore {
+      position: relative;
+      gap: 0;
+      padding-left: 0;
+    }
+    .tiles.explore::before {
+      content: "";
+      position: absolute;
+      z-index: 0;
+      left: 27px;
+      top: 34px;
+      bottom: 34px;
+      width: 2px;
+      border-radius: 999px;
+      background: linear-gradient(180deg, #4fd1b5, #4aa3e6 27%, #7c6cf0 53%, #b45cf0 75%, #c85ad0);
+      opacity: 0.78;
+    }
+    .explore-tile {
+      display: grid;
+      grid-template-columns: 40px minmax(0, 1fr) 28px;
+      align-items: center;
+      gap: 13px;
+      min-height: 92px;
+      padding: 16px 8px;
+      border: 0;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+      border-radius: 0;
+      background: transparent;
+      overflow: visible;
+    }
+    .explore-tile:last-child { border-bottom: 0; }
+    .explore-tile::before { display: none; }
+    .explore-tile::after {
+      inset: 0;
+      left: 0;
+      width: 100%;
+      background: linear-gradient(90deg, color-mix(in srgb, var(--tint) 12%, transparent), transparent 72%);
+      opacity: 0;
+    }
+    .explore-tile.sel {
+      border-color: rgba(255,255,255,0.08);
+      background: transparent;
+      box-shadow: none;
+    }
+    .explore-tile.sel::after { opacity: 1; }
+    .explore-tile .dot {
+      width: 28px;
+      height: 28px;
+      justify-self: center;
+      box-shadow: 0 0 14px -1px var(--tint);
+    }
+    .explore-tile.sel .dot {
+      box-shadow: 0 0 0 3px color-mix(in srgb, var(--tint) 38%, transparent), 0 0 20px 1px var(--tint);
+    }
+    .explore-tile .txt {
+      display: grid;
+      grid-template-columns: minmax(86px, 0.82fr) minmax(60px, 1fr) auto;
+      align-items: center;
+      gap: 12px;
+      min-width: 0;
+    }
+    .explore-tile .nm {
+      font-size: 1.38rem;
+      white-space: nowrap;
+    }
+    .explore-wave {
+      display: block;
+      width: 100%;
+      height: 28px;
+      object-fit: fill;
+      opacity: 0.34;
+      filter: hue-rotate(var(--wave-hue, 0deg));
+    }
+    .explore-tile.sel .explore-wave { opacity: 0.72; }
+    .explore-tile .sub {
+      margin: 0;
+      padding: 0;
+      border: 0;
+      border-radius: 0;
+      background: transparent;
+      color: var(--muted);
+      font-size: 0.62rem;
+      letter-spacing: 0.17em;
+      white-space: nowrap;
+    }
+    .explore-tile .rn {
+      justify-self: end;
+      font-size: 0.72rem;
+      letter-spacing: 0.18em;
+    }
+    @media (max-width: 430px) {
+      .explore-tile { grid-template-columns: 36px minmax(0, 1fr) 24px; gap: 10px; }
+      .explore-tile .txt { grid-template-columns: minmax(80px, 0.9fr) auto; gap: 7px 10px; }
+      .explore-wave { grid-column: 1 / -1; grid-row: 2; height: 16px; }
+      .explore-tile .sub { justify-self: end; }
+      .tiles.explore::before { left: 25px; }
+    }
+    .sit-tiles {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 0;
+    }
+    .sit-preset-tile {
+      position: relative;
+      display: grid;
+      grid-template-columns: 36px minmax(0, 1fr);
+      gap: 14px;
+      width: 100%;
+      min-height: 92px;
+      align-items: center;
+      padding: 16px 18px;
+      border: 0;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+      border-radius: 0;
+      background: transparent;
+      transition: background 260ms var(--ease), min-height 260ms var(--ease), padding 260ms var(--ease);
+    }
+    .sit-preset-tile::before { display: none; }
+    .sit-preset-tile::after {
+      left: 0;
+      width: 72%;
+      background: radial-gradient(80% 140% at 10% 50%, var(--tint) 0%, transparent 72%);
+      opacity: 0;
+    }
+    .sit-preset-tile:last-child { border-bottom: 0; }
+    .sit-preset-tile .dot {
+      width: 30px;
+      height: 30px;
+      transition: width 260ms var(--ease), height 260ms var(--ease), box-shadow 260ms var(--ease);
+    }
+    .sit-preset-tile .txt {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      align-items: center;
+      column-gap: 18px;
+      row-gap: 7px;
+      min-width: 0;
+    }
+    .sit-preset-tile .nm {
+      display: block;
+      font-size: 1.18rem;
+    }
+    .sit-preset-tile .sub {
+      display: block;
+      margin-top: 0;
+      margin-bottom: 0;
+      padding: 0;
+      border: 0;
+      border-radius: 0;
+      background: transparent;
+      white-space: nowrap;
+      justify-self: end;
+    }
+    .sit-preset-tile .note {
+      display: block;
+      grid-column: 1 / -1;
+      margin-top: 0;
+      font-size: 0.8rem;
+      line-height: 1.35;
+      color: var(--muted);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .sit-preset-tile .txt:has(.badge) .note { grid-column: 1; }
+    .sit-preset-tile.sel {
+      grid-template-columns: 36px minmax(0, 1fr);
+      min-height: 92px;
+      padding: 16px 18px;
+      border-color: rgba(255,255,255,0.08);
+      background: color-mix(in srgb, var(--tint) 9%, transparent);
+      box-shadow: none;
+    }
+    .sit-preset-tile.sel::before {
+      display: block;
+      width: 3px;
+    }
+    .sit-preset-tile.sel::after { opacity: 0.12; }
+    .sit-preset-tile.sel .dot {
+      width: 30px;
+      height: 30px;
+      box-shadow: 0 0 18px -2px var(--tint);
+    }
+    .sit-preset-tile.sel .txt {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      align-items: center;
+      column-gap: 18px;
+      row-gap: 7px;
+    }
+    .sit-preset-tile.sel .nm {
+      font-size: 1.18rem;
+      line-height: 1.05;
+    }
+    .sit-preset-tile.sel .note {
+      margin-top: 0;
+      font-size: 0.8rem;
+      white-space: nowrap;
+    }
+    .sit-preset-tile.sel .sub {
+      margin-top: 0;
+      color: var(--tint);
+    }
+    .sit-preset-tile .badge {
+      position: static;
+      grid-column: 2;
+      grid-row: 2;
+      justify-self: end;
+      z-index: 2;
+      display: block;
+      margin-top: 0;
+      font-size: 0.56rem;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      font-weight: 600;
+      color: var(--tint);
+      padding: 3px 7px;
+      border-radius: 999px;
+      border: 1px solid color-mix(in srgb, var(--tint) 40%, transparent);
+      background: color-mix(in srgb, var(--tint) 12%, transparent);
+    }
     .mine-tile.sel {
       background: #18231f;
     }
@@ -384,7 +674,7 @@
       background: #191920;
     }
     .sit-shell {
-      gap: 12px;
+      gap: 0;
       padding-left: 0;
       padding-right: 0;
       overflow: hidden;
@@ -394,12 +684,107 @@
       margin-right: 14px;
     }
     .sit-header {
+      position: relative;
       display: grid;
+      gap: 0;
+    }
+    .sit-categories {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      border-bottom: 1px solid rgba(255,255,255,0.10);
+    }
+    .sit-category {
+      --cat-color: var(--accent);
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
       gap: 8px;
+      min-width: 0;
+      padding: 12px 6px 14px;
+      border: 0;
+      background: transparent;
+      color: var(--muted);
+      font-size: 0.84rem;
+      transition: color 220ms var(--ease);
+    }
+    .sit-category[data-group="focus"] { --cat-color: #4fd1b5; }
+    .sit-category[data-group="daytime"] { --cat-color: #8d80f5; }
+    .sit-category[data-group="sleep"] { --cat-color: #d26ad8; }
+    .sit-category::after {
+      content: "";
+      position: absolute;
+      left: 10%;
+      right: 10%;
+      bottom: -1px;
+      height: 2px;
+      border-radius: 999px;
+      background: var(--cat-color);
+      box-shadow: 0 0 12px color-mix(in srgb, var(--cat-color) 45%, transparent);
+      opacity: 0;
+      transform: scaleX(0.5);
+      transition: opacity 220ms var(--ease), transform 220ms var(--ease);
+    }
+    .sit-category.active {
+      color: var(--text);
+      font-weight: 600;
+    }
+    .sit-category.active::after {
+      opacity: 1;
+      transform: scaleX(1);
+    }
+    .sit-category-icon {
+      width: 21px;
+      height: 21px;
+      flex: 0 0 auto;
+      object-fit: contain;
+      opacity: 0.58;
+      filter: invert(92%) sepia(8%) saturate(220%) hue-rotate(350deg) brightness(90%);
+      transition: opacity 220ms var(--ease), filter 220ms var(--ease);
+    }
+    .sit-category.active .sit-category-icon {
+      opacity: 1;
+      filter: invert(92%) sepia(8%) saturate(220%) hue-rotate(350deg) brightness(112%) drop-shadow(0 0 6px var(--cat-color));
+    }
+    .sit-shell .pane-card {
+      gap: 0;
+      border: 0;
+      border-radius: 0;
+      padding: 0;
+      background: transparent;
+    }
+    .sit-shell .pane-head {
+      justify-content: center;
+      align-items: center;
+      gap: 0;
+      padding: 12px 16px 13px;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+    }
+    .sit-shell .pane-head strong {
+      display: none;
+    }
+    .sit-shell .pane-head .small {
+      font-size: 0.76rem;
+      letter-spacing: 0.04em;
+      text-align: center;
+      color: var(--muted);
     }
     .sit-controls {
       display: grid;
       gap: 10px;
+      padding-top: 14px;
+      padding-bottom: 14px;
+      border-top: 1px solid rgba(255,255,255,0.08);
+    }
+    @media (max-width: 430px) {
+      .sit-category { gap: 6px; font-size: 0.74rem; }
+      .sit-category-icon { width: 18px; height: 18px; }
+      .sit-shell .pane-head { padding: 11px 14px 12px; }
+      .sit-preset-tile,
+      .sit-preset-tile.sel { padding: 15px 14px; }
+      .sit-preset-tile .txt,
+      .sit-preset-tile.sel .txt { column-gap: 10px; }
+      .sit-preset-tile .sub { font-size: 0.6rem; letter-spacing: 0.14em; }
     }
     .mine-tile::before {
       content: '';
@@ -569,58 +954,233 @@
       top: 0;
       transition: top 1.6s cubic-bezier(0.4,0,0.2,1), background 2.2s, box-shadow 2.2s;
     }
-    .save-row {
-      display: grid;
-      grid-template-columns: 1fr auto;
-      gap: 8px;
-    }
-    #savePreset {
-      border: 1px solid color-mix(in srgb, var(--accent) 55%, transparent);
-      background: var(--accent-soft);
-      color: var(--text);
-      border-radius: 10px;
-      padding: 8px 14px;
-      font-weight: 600;
-      font-size: 0.92rem;
-      transition: background 200ms ease, border-color 200ms ease, color 200ms ease, transform 150ms ease;
-    }
-    #savePreset:active { transform: scale(0.98); filter: brightness(0.95); }
     .tinker-shell {
       gap: 12px;
       padding-left: 0;
       padding-right: 0;
       overflow: hidden;
+      min-width: 0;
     }
-    .tinker-header, .tinker-footer, .edit-banner {
+    #tinkerPanel {
+      display: grid;
+      gap: 14px;
       margin-left: 14px;
       margin-right: 14px;
+      min-width: 0;
     }
-    .tinker-header {
-      display: grid;
-      gap: 8px;
+    .island {
+      background: var(--card);
+      border: 1px solid var(--hair);
+      border-radius: 18px;
+      padding: 16px;
+      box-shadow: 0 10px 34px -22px rgba(0,0,0,0.9);
     }
-    .tinker-top {
+    .island-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 4px;
+    }
+    .island-reset {
+      padding: 5px 11px;
+      font-size: 0.68rem;
+    }
+    .island-title {
+      font-size: 0.64rem;
+      letter-spacing: 0.26em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+    .island-sub {
+      font-size: 0.78rem;
+      color: var(--faint);
+      line-height: 1.5;
+      margin: 2px 0 14px;
+    }
+    .sub {
+      border: 1px solid var(--hair);
+      border-radius: 13px;
+      background: var(--card-2);
+      padding: 13px;
+      margin-bottom: 10px;
+    }
+    .sub:last-child { margin-bottom: 0; }
+    .sub-title {
+      font-size: 0.64rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 12px;
+      opacity: 0.8;
+    }
+    .sub-title.plain {
+      color: var(--muted);
+      opacity: 1;
+    }
+    .beat-island {
+      text-align: center;
+      padding: 18px 16px 16px;
+    }
+    .beat-num {
+      font-size: 2.35rem;
+      font-weight: 300;
+      font-variant-numeric: tabular-nums;
+      line-height: 1;
+      color: var(--text);
+    }
+    .beat-num .hz {
+      font-size: 0.95rem;
+      color: var(--muted);
+      margin-left: 6px;
+      letter-spacing: 0.1em;
+    }
+    .beat-band {
+      margin-top: 8px;
+      font-size: 0.66rem;
+      letter-spacing: 0.24em;
+      text-transform: uppercase;
+      color: var(--accent);
+      transition: color 0.6s var(--ease);
+    }
+    .beat-cap {
+      margin-top: 9px;
+      font-size: 0.73rem;
+      color: var(--faint);
+      line-height: 1.5;
+    }
+    .brain-map {
+      width: min(100%, 430px);
+      margin: 20px auto 0;
+      text-align: left;
+    }
+    .brain-map-title {
       display: flex;
       justify-content: space-between;
-      align-items: start;
+      align-items: baseline;
       gap: 12px;
+      margin-bottom: 9px;
+      font-size: 0.62rem;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--muted);
     }
-    .tinker-title {
-      color: var(--text);
+    .brain-map-title span:last-child {
+      letter-spacing: 0.04em;
+      text-transform: none;
+      color: var(--faint);
+    }
+    .brain-map-track {
+      position: relative;
+      display: grid;
+      grid-template-columns: 3.5fr 4fr 5fr 17fr 15fr;
+      height: 8px;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.08);
+    }
+    .brain-map-segment:first-child { border-radius: 999px 0 0 999px; }
+    .brain-map-segment.gamma { border-radius: 0 999px 999px 0; }
+    .brain-map-segment.delta { background: #c85ad0; }
+    .brain-map-segment.theta { background: #7c6cf0; }
+    .brain-map-segment.alpha { background: #4fd1b5; }
+    .brain-map-segment.beta { background: #4aa3e6; }
+    .brain-map-segment.gamma { background: #e58fe8; }
+    .brain-map-marker {
+      position: absolute;
+      left: 0;
+      top: 50%;
+      width: 14px;
+      height: 14px;
+      border: 2px solid var(--text);
+      border-radius: 50%;
+      background: var(--accent);
+      box-shadow: 0 0 10px var(--glow);
+      transform: translate(-50%, -50%);
+      transition: left 260ms var(--ease), background 600ms var(--ease), box-shadow 600ms var(--ease);
+    }
+    .brain-map-labels {
+      display: grid;
+      grid-template-columns: 3.5fr 4fr 5fr 17fr 15fr;
+      margin-top: 8px;
+      font-size: 0.52rem;
+      color: var(--faint);
+    }
+    .brain-map-labels span { text-align: center; }
+    .brain-map-tools {
+      display: inline-flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 7px;
+    }
+    .brain-map-info-btn {
+      width: 24px;
+      height: 24px;
+      display: grid;
+      place-items: center;
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 50%;
+      padding: 4px;
+      background: rgba(255,255,255,0.025);
+    }
+    .brain-map-info-btn img {
+      width: 100%;
+      height: 100%;
+      filter: invert(88%);
+      opacity: 0.72;
+    }
+    .brain-map-info-btn[aria-expanded="true"] {
+      border-color: color-mix(in srgb, var(--accent) 50%, transparent);
+      background: var(--accent-soft);
+    }
+    .brain-map-info {
+      margin-top: 14px;
+      padding: 13px 14px;
+      border: 1px solid rgba(255,255,255,0.10);
+      border-radius: 12px;
+      background: rgba(0,0,0,0.20);
+      color: var(--muted);
+      font-size: 0.7rem;
+      line-height: 1.55;
+    }
+    .brain-map-info p { margin: 0 0 8px; }
+    .brain-map-info p:last-child { margin-bottom: 0; }
+    .seg {
+      position: relative;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      background: rgba(0,0,0,0.30);
+      border: 1px solid var(--hair);
+      border-radius: 999px;
+      padding: 4px;
+      margin-bottom: 16px;
+    }
+    .seg button {
+      position: relative;
+      z-index: 2;
+      border: 0;
+      background: transparent;
+      color: var(--muted);
+      font: inherit;
+      font-size: 0.8rem;
+      padding: 9px 0;
+      border-radius: 999px;
+      cursor: pointer;
+      transition: color 0.3s var(--ease);
+    }
+    .seg button.on {
+      color: #0c100f;
       font-weight: 600;
-      font-size: 1rem;
     }
-    .beat-readout {
-      color: var(--text);
-      font-family: "SF Mono", "Menlo", monospace;
-      font-size: 0.86rem;
-      margin-top: 4px;
-    }
-    .beat-readout.muted { color: var(--muted); }
-    .tinker-dots {
-      display: flex;
-      justify-content: center;
-      gap: 8px;
+    .seg .glide {
+      position: absolute;
+      z-index: 1;
+      top: 4px;
+      bottom: 4px;
+      left: 4px;
+      width: calc((100% - 8px) / 3);
+      border-radius: 999px;
+      background: linear-gradient(180deg, var(--accent), var(--glow));
+      box-shadow: 0 2px 16px -3px var(--glow);
+      transition: transform 0.32s var(--ease), background 1.2s var(--ease), box-shadow 1.2s var(--ease);
     }
     .tinker-dot {
       width: 8px;
@@ -637,12 +1197,14 @@
       scroll-snap-type: x mandatory;
       -webkit-overflow-scrolling: touch;
       scroll-behavior: smooth;
+      min-width: 0;
     }
     .tinker-swipe::-webkit-scrollbar { display: none; }
     .tinker-pane {
       flex: 0 0 100%;
+      width: 100%;
+      min-width: 0;
       scroll-snap-align: center;
-      padding: 0 14px;
       display: grid;
       gap: 12px;
     }
@@ -653,6 +1215,13 @@
       border-radius: 14px;
       padding: 14px;
       background: rgba(255,255,255,0.025);
+      min-width: 0;
+    }
+    #tinkerSwipe .pane-card {
+      border: 0;
+      border-radius: 0;
+      padding: 4px 0 0;
+      background: transparent;
     }
     .pane-head {
       display: flex;
@@ -661,7 +1230,11 @@
       gap: 12px;
     }
     .pane-head strong {
-      font-size: 1rem;
+      font-family: var(--serif);
+      font-style: italic;
+      font-size: 1.35rem;
+      font-weight: 500;
+      color: var(--text);
     }
     .toggle-pill, .wave-btn, .type-btn {
       border: 1px solid rgba(255,255,255,0.12);
@@ -684,38 +1257,64 @@
     }
     .type-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
     .control-block {
-      display: grid;
-      gap: 6px;
+      margin-bottom: 13px;
+    }
+    .control-block:last-child {
+      margin-bottom: 0;
+    }
+    .control-block .row {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      min-width: 0;
+      margin-bottom: 7px;
+    }
+    .control-block .row span:first-child {
+      font-size: 0.83rem;
+      color: var(--text);
+    }
+    .control-block .row span:last-child {
+      font-size: 0.83rem;
+      font-variant-numeric: tabular-nums;
+      color: var(--accent);
+      letter-spacing: 0.02em;
     }
     .precision-stepper-row {
-      display: grid;
-      grid-template-columns: 42px minmax(0, 1fr) 42px;
+      display: flex;
       align-items: center;
-      gap: 8px;
+      gap: 9px;
+      width: 100%;
+      min-width: 0;
     }
     .precision-stepper {
-      min-width: 40px;
-      min-height: 40px;
-      border: 1px solid rgba(255,255,255,0.12);
-      background: rgba(255,255,255,0.03);
+      flex: 0 0 auto;
+      width: 30px;
+      height: 30px;
+      border-radius: 9px;
+      border: 1px solid var(--hair);
+      background: var(--card-2);
       color: var(--muted);
-      border-radius: 999px;
       padding: 0;
-      line-height: 1;
       font-size: 1rem;
+      line-height: 1;
+      display: grid;
+      place-items: center;
       user-select: none;
       -webkit-user-select: none;
       touch-action: manipulation;
-      transition: background 160ms ease, border-color 160ms ease, color 160ms ease, transform 120ms ease;
+      transition: all 0.18s var(--ease);
     }
     .precision-stepper:active {
-      color: var(--text);
-      border-color: color-mix(in srgb, var(--accent) 50%, transparent);
-      background: var(--accent-soft);
-      transform: scale(0.96);
+      transform: scale(0.93);
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+    .precision-stepper-row input[type="range"] {
+      flex: 1;
+      min-width: 0;
     }
     .tinker-value {
-      color: rgba(232,230,221,0.88);
+      color: var(--accent);
       border-bottom: 1px solid color-mix(in srgb, var(--accent) 34%, transparent);
       cursor: text;
       padding-bottom: 1px;
@@ -730,13 +1329,113 @@
       font-size: 0.9rem;
       text-align: right;
     }
-    .tinker-footer {
-      display: grid;
-      gap: 12px;
+    .save-island {
+      border-color: color-mix(in srgb, var(--accent) 26%, transparent);
+      background: linear-gradient(180deg, color-mix(in srgb, var(--accent) 7%, transparent), var(--card));
     }
-    .pulse-divider {
-      border-top: 1px solid rgba(255,255,255,0.06);
-      padding-top: 12px;
+    .save-row {
+      display: flex;
+      gap: 9px;
+    }
+    .save-row input {
+      flex: 1;
+      min-width: 0;
+      background: rgba(0,0,0,0.32);
+      border: 1px solid var(--hair);
+      border-radius: 11px;
+      color: var(--text);
+      font: inherit;
+      font-size: 0.9rem;
+      padding: 12px 13px;
+      outline: none;
+    }
+    .save-row input::placeholder {
+      color: var(--faint);
+    }
+    .save-row input:focus {
+      border-color: color-mix(in srgb, var(--accent) 60%, transparent);
+    }
+    .save-btn {
+      border: 0;
+      border-radius: 11px;
+      padding: 0 20px;
+      font: inherit;
+      font-size: 0.82rem;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      color: #0b100e;
+      background: linear-gradient(180deg, var(--accent), var(--glow));
+      box-shadow: 0 3px 18px -6px var(--glow);
+    }
+    .save-btn:active { transform: scale(0.98); }
+    .save-btn[disabled] {
+      opacity: 0.4;
+      box-shadow: none;
+      cursor: default;
+    }
+    .chips-lbl {
+      margin: 16px 0 9px;
+      font-size: 0.62rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+    .chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 7px;
+    }
+    .chip {
+      display: inline-flex;
+      align-items: center;
+      font-size: 0.78rem;
+      color: var(--text);
+      border: 1px solid var(--hair);
+      background: var(--card-2);
+      border-radius: 999px;
+      overflow: hidden;
+    }
+    .chip.active {
+      border-color: color-mix(in srgb, var(--accent) 60%, transparent);
+      background: color-mix(in srgb, var(--accent) 12%, transparent);
+    }
+    .chip .load {
+      background: transparent;
+      border: 0;
+      color: inherit;
+      font: inherit;
+      padding: 8px 4px 8px 13px;
+    }
+    .chip .act {
+      background: transparent;
+      border: 0;
+      color: var(--faint);
+      font-size: 0.8rem;
+      padding: 8px 6px;
+      line-height: 1;
+    }
+    .chip .act.del {
+      padding-right: 11px;
+    }
+    .chip input {
+      background: rgba(0,0,0,0.4);
+      border: 0;
+      outline: none;
+      color: var(--text);
+      font: inherit;
+      font-size: 0.78rem;
+      padding: 8px 10px;
+      width: 120px;
+    }
+    .toast {
+      margin-top: 11px;
+      font-size: 0.75rem;
+      color: var(--accent);
+      opacity: 0;
+      transition: opacity 0.3s var(--ease);
+    }
+    .toast.show {
+      opacity: 1;
     }
     .mode-panel:not(.hidden) {
       animation: panelIn 200ms cubic-bezier(0.4,0,0.2,1);
@@ -821,8 +1520,8 @@
       padding: 7px 11px;
       font-size: 0.82rem;
     }
-    body.immersive .header,
-    body.immersive .info-links,
+    body.immersive .brand,
+    body.immersive .utility-row,
     body.immersive .mode-tabs,
     body.immersive .mode-panel,
     body.immersive .session-controls,
@@ -888,13 +1587,25 @@
       <div class="tick" style="top:100%"></div>
       <div id="railMarker"></div>
     </div>
-    <div class="header">
-      <div class="title">Descent</div>
-      <button class="gear" id="gearBtn" aria-label="Open Tinker">⚙</button>
+    <div class="utility-row">
+      <div class="utility-left">
+        <button class="gear" id="gearBtn" aria-label="Open Tinker">
+          <img class="utility-icon" src="icons/gear.svg" alt=""><span>Settings</span>
+        </button>
+        <button class="reset-island" id="resetMode" type="button" aria-label="Reset current mode">Reset</button>
+      </div>
+      <div class="info-links" aria-label="Information">
+        <button class="info-btn" id="scienceInfoBtn" type="button" aria-controls="infoSheet">
+          <img class="utility-icon" src="icons/atom.svg" alt=""><span>Science</span>
+        </button>
+        <button class="info-btn" id="howToInfoBtn" type="button" aria-controls="infoSheet">
+          <img class="utility-icon" src="icons/book-open.svg" alt=""><span>Practice Guide</span>
+        </button>
+      </div>
     </div>
-    <div class="info-links" aria-label="Information">
-      <button class="info-btn" id="scienceInfoBtn" type="button" aria-controls="infoSheet">the science</button>
-      <button class="info-btn" id="howToInfoBtn" type="button" aria-controls="infoSheet">how to</button>
+    <div class="brand">
+      <div class="title">Descent</div>
+      <div class="brand-subtitle">Binaural meditation</div>
     </div>
 
     <div class="notice hidden" id="ringerHint">If you hear nothing, check your ring/silent switch.</div>
@@ -914,20 +1625,19 @@
       <button class="tab" data-mode="explore">Explore</button>
       <button class="tab" data-mode="tinker">Tinker</button>
     </div>
-
     <section id="mode-sit" class="panel mode-panel sit-shell">
       <div class="sit-header">
-        <div class="tinker-top">
-          <div>
-            <div class="tinker-title">Sit</div>
-            <div class="small" id="sitGroupLabel">Clarity</div>
-          </div>
-          <button class="quiet-btn" id="resetSit">Reset</button>
-        </div>
-        <div class="tinker-dots" id="sitDots" aria-label="Sit preset panes">
-          <button class="tinker-dot active" data-pane="0" aria-label="Clarity presets"></button>
-          <button class="tinker-dot" data-pane="1" aria-label="Daytime presets"></button>
-          <button class="tinker-dot" data-pane="2" aria-label="Deep Sleep presets"></button>
+        <div class="hidden" id="sitGroupLabel" aria-live="polite">Clarity</div>
+        <div class="sit-categories" id="sitDots" aria-label="Preset categories">
+          <button class="sit-category active" type="button" data-pane="0" data-group="focus" aria-pressed="true">
+            <img class="sit-category-icon" src="icons/sparkle.svg" alt=""><span>Clarity</span>
+          </button>
+          <button class="sit-category" type="button" data-pane="1" data-group="daytime" aria-pressed="false">
+            <img class="sit-category-icon" src="icons/sun.svg" alt=""><span>Daytime</span>
+          </button>
+          <button class="sit-category" type="button" data-pane="2" data-group="sleep" aria-pressed="false">
+            <img class="sit-category-icon" src="icons/moon.svg" alt=""><span>Deep Sleep</span>
+          </button>
         </div>
       </div>
       <div class="tinker-swipe" id="sitSwipe">
@@ -937,7 +1647,7 @@
               <strong>Clarity</strong>
               <span class="small">Clear, alert, working states</span>
             </div>
-            <div class="tiles" id="sitTilesFocus"></div>
+            <div class="tiles sit-tiles" id="sitTilesFocus"></div>
           </div>
         </article>
         <article class="tinker-pane" data-pane="1" data-group="daytime">
@@ -946,7 +1656,7 @@
               <strong>Daytime</strong>
               <span class="small">Calm, steady, awake</span>
             </div>
-            <div class="tiles" id="sitTilesDaytime"></div>
+            <div class="tiles sit-tiles" id="sitTilesDaytime"></div>
           </div>
         </article>
         <article class="tinker-pane" data-pane="2" data-group="sleep">
@@ -955,7 +1665,7 @@
               <strong>Deep Sleep</strong>
               <span class="small">Wind-down sounds for sleep support</span>
             </div>
-            <div class="tiles" id="sitTilesSleep"></div>
+            <div class="tiles sit-tiles" id="sitTilesSleep"></div>
           </div>
         </article>
       </div>
@@ -974,7 +1684,6 @@
     </section>
 
     <section id="mode-explore" class="panel mode-panel hidden">
-      <button class="quiet-btn" id="resetExplore">Reset</button>
       <div class="tiles explore" id="exploreTiles"></div>
       <div class="row">
         <span>Journey descent</span>
@@ -993,142 +1702,212 @@
     </section>
 
     <section id="mode-tinker" class="panel mode-panel tinker-shell hidden">
-      <div class="tinker-header">
-        <div class="tinker-top">
-          <div>
-            <div class="tinker-title">Tinker</div>
-            <div class="beat-readout" id="tBeatReadout">Beat: 6.0 Hz</div>
+      <div id="tinkerPanel">
+        <div class="island beat-island">
+          <div class="island-head">
+            <div class="island-title">Tinker</div>
           </div>
-          <button class="quiet-btn" id="resetTinker">Reset</button>
-        </div>
-        <div class="tinker-dots" id="tinkerDots" aria-label="Tinker panes">
-          <button class="tinker-dot active" data-pane="0" aria-label="Oscillator A"></button>
-          <button class="tinker-dot" data-pane="1" aria-label="Oscillator B"></button>
-          <button class="tinker-dot" data-pane="2" aria-label="Noise"></button>
-        </div>
-      </div>
-      <div class="edit-banner hidden" id="editBanner">
-        <span id="editTitle">Editing preset</span>
-        <button id="cancelEdit">Cancel</button>
-      </div>
-      <div class="tinker-swipe" id="tinkerSwipe">
-        <article class="tinker-pane" data-pane="0">
-          <div class="pane-card">
-            <div class="pane-head">
-              <strong>Osc A</strong>
-              <button class="toggle-pill on" id="oscAOn">On</button>
+          <div class="beat-num"><span id="tBeatReadout">6.00</span><span class="hz">Hz</span></div>
+          <div class="beat-band" id="tBeatBand">Theta band</div>
+          <div class="brain-map" aria-label="Current beat position across approximate brainwave frequency bands">
+            <div class="brain-map-title">
+              <span>Beat map</span>
+              <span class="brain-map-tools">
+                <span>0.5–45 Hz orientation</span>
+                <button class="brain-map-info-btn" id="brainMapInfoBtn" type="button" aria-expanded="false" aria-controls="brainMapInfo" aria-label="Explain the beat map">
+                  <img src="icons/info.svg" alt="">
+                </button>
+              </span>
             </div>
-            <div class="control-block">
-              <div class="row"><span>Wave</span></div>
-              <div class="wave-grid" data-osc="oscA">
-                <button class="wave-btn active" data-wave="sine">Sine</button>
-                <button class="wave-btn" data-wave="triangle">Tri</button>
-                <button class="wave-btn" data-wave="sawtooth">Saw</button>
-                <button class="wave-btn" data-wave="square">Square</button>
-              </div>
+            <div class="brain-map-track" role="meter" aria-valuemin="0.5" aria-valuemax="45" aria-valuenow="6" id="brainMapTrack">
+              <span class="brain-map-segment delta"></span>
+              <span class="brain-map-segment theta"></span>
+              <span class="brain-map-segment alpha"></span>
+              <span class="brain-map-segment beta"></span>
+              <span class="brain-map-segment gamma"></span>
+              <span class="brain-map-marker" id="brainMapMarker" aria-hidden="true"></span>
             </div>
-            <div class="control-block">
-              <div class="row"><span>Pitch (Hz)</span><span id="oscAPitchVal">147.00</span></div>
-              <input type="range" id="oscAPitch" min="0" max="1" step="0.001" value="0">
+            <div class="brain-map-labels" aria-hidden="true">
+              <span>Delta</span><span>Theta</span><span>Alpha</span><span>Beta</span><span>Gamma</span>
             </div>
-            <div class="control-block">
-              <div class="row"><span>Lowpass (Hz)</span><span id="oscALowpassVal">20000</span></div>
-              <input type="range" id="oscALowpass" min="0" max="1" step="0.001" value="1">
-            </div>
-            <div class="control-block">
-              <div class="row"><span>Pan</span><span id="oscAPanVal">-1.00</span></div>
-              <input type="range" id="oscAPan" min="-1" max="1" step="0.01" value="-1">
-            </div>
-            <div class="control-block">
-              <div class="row"><span>Volume</span><span id="oscAVolumeVal">0.82</span></div>
-              <input type="range" id="oscAVolume" min="0" max="1" step="0.01" value="0.82">
+            <div class="brain-map-info hidden" id="brainMapInfo">
+              <p>This map plots the frequency difference between Osc A and Osc B. For example, 147 Hz in one ear and 153 Hz in the other creates a 6 Hz binaural beat, shown in the Theta range.</p>
+              <p>The ranges are approximate orientation bands: Delta 0.5–4 Hz, Theta 4–8 Hz, Alpha 8–13 Hz, Beta 13–30 Hz, and Gamma 30–45 Hz. Headphones are needed for binaural left/right separation.</p>
+              <p>Carrier pitch, waveform, noise, and pulse change how the sound feels, but they do not move this marker unless they change the Osc A/B difference. The labels are a reference, not a guarantee that listening will produce a particular brain state.</p>
             </div>
           </div>
-        </article>
+          <div class="beat-cap">Only the Osc A/B difference maps here. Waveform, noise, and pulse shape the sound.</div>
+        </div>
 
-        <article class="tinker-pane" data-pane="1">
-          <div class="pane-card">
-            <div class="pane-head">
-              <strong>Osc B</strong>
-              <button class="toggle-pill on" id="oscBOn">On</button>
-            </div>
-            <div class="control-block">
-              <div class="row"><span>Wave</span></div>
-              <div class="wave-grid" data-osc="oscB">
-                <button class="wave-btn active" data-wave="sine">Sine</button>
-                <button class="wave-btn" data-wave="triangle">Tri</button>
-                <button class="wave-btn" data-wave="sawtooth">Saw</button>
-                <button class="wave-btn" data-wave="square">Square</button>
-              </div>
-            </div>
-            <div class="control-block">
-              <div class="row"><span>Pitch (Hz)</span><span id="oscBPitchVal">153.00</span></div>
-              <input type="range" id="oscBPitch" min="0" max="1" step="0.001" value="0">
-            </div>
-            <div class="control-block">
-              <div class="row"><span>Lowpass (Hz)</span><span id="oscBLowpassVal">20000</span></div>
-              <input type="range" id="oscBLowpass" min="0" max="1" step="0.001" value="1">
-            </div>
-            <div class="control-block">
-              <div class="row"><span>Pan</span><span id="oscBPanVal">1.00</span></div>
-              <input type="range" id="oscBPan" min="-1" max="1" step="0.01" value="1">
-            </div>
-            <div class="control-block">
-              <div class="row"><span>Volume</span><span id="oscBVolumeVal">0.82</span></div>
-              <input type="range" id="oscBVolume" min="0" max="1" step="0.01" value="0.82">
-            </div>
+        <div class="island">
+          <div class="island-head">
+            <div class="island-title">Source</div>
+            <button class="reset-island island-reset" id="resetTinkerInline" type="button">Reset</button>
           </div>
-        </article>
+          <div class="island-sub">Two oscillators make the beat. The noise bed sits underneath.</div>
+          <div class="seg" id="tinkerSeg" aria-label="Tinker source panes">
+            <div class="glide" id="tinkerSegGlide"></div>
+            <button class="on" type="button" data-pane="0">Osc A</button>
+            <button type="button" data-pane="1">Osc B</button>
+            <button type="button" data-pane="2">Noise</button>
+          </div>
+          <div class="hidden" id="tinkerDots" aria-hidden="true"></div>
+          <div class="tinker-swipe" id="tinkerSwipe">
+            <article class="tinker-pane" data-pane="0">
+              <div class="pane-card">
+                <div class="pane-head">
+                  <strong>Osc A</strong>
+                  <button class="toggle-pill on" id="oscAOn">On</button>
+                </div>
+                <div class="control-block">
+                  <div class="row"><span>Wave</span></div>
+                  <div class="wave-grid" data-osc="oscA">
+                    <button class="wave-btn active" data-wave="sine">Sine</button>
+                    <button class="wave-btn" data-wave="triangle">Tri</button>
+                    <button class="wave-btn" data-wave="sawtooth">Saw</button>
+                    <button class="wave-btn" data-wave="square">Square</button>
+                  </div>
+                </div>
+                <div class="control-block">
+                  <div class="row"><span>Pitch (Hz)</span><span id="oscAPitchVal">147.00</span></div>
+                  <input type="range" id="oscAPitch" min="0" max="1" step="0.001" value="0">
+                </div>
+                <div class="control-block">
+                  <div class="row"><span>Volume</span><span id="oscAVolumeVal">0.82</span></div>
+                  <input type="range" id="oscAVolume" min="0" max="1" step="0.01" value="0.82">
+                </div>
+                <div class="sub">
+                  <div class="sub-title plain">Refinements</div>
+                  <div class="control-block">
+                    <div class="row"><span>Pan</span><span id="oscAPanVal">-1.00</span></div>
+                    <input type="range" id="oscAPan" min="-1" max="1" step="0.01" value="-1">
+                  </div>
+                  <div class="control-block">
+                    <div class="row"><span>Lowpass (Hz)</span><span id="oscALowpassVal">20000</span></div>
+                    <input type="range" id="oscALowpass" min="0" max="1" step="0.001" value="1">
+                  </div>
+                </div>
+              </div>
+            </article>
 
-        <article class="tinker-pane" data-pane="2">
-          <div class="pane-card">
-            <div class="pane-head">
-              <strong>Noise</strong>
-              <button class="toggle-pill on" id="noiseOn">On</button>
-            </div>
-            <div class="control-block">
-              <div class="row"><span>Type</span></div>
-              <div class="type-grid" id="noiseTypeGrid">
-                <button class="type-btn" data-type="white">White</button>
-                <button class="type-btn active" data-type="pink">Pink</button>
-                <button class="type-btn" data-type="brown">Brown</button>
+            <article class="tinker-pane" data-pane="1">
+              <div class="pane-card">
+                <div class="pane-head">
+                  <strong>Osc B</strong>
+                  <button class="toggle-pill on" id="oscBOn">On</button>
+                </div>
+                <div class="control-block">
+                  <div class="row"><span>Wave</span></div>
+                  <div class="wave-grid" data-osc="oscB">
+                    <button class="wave-btn active" data-wave="sine">Sine</button>
+                    <button class="wave-btn" data-wave="triangle">Tri</button>
+                    <button class="wave-btn" data-wave="sawtooth">Saw</button>
+                    <button class="wave-btn" data-wave="square">Square</button>
+                  </div>
+                </div>
+                <div class="control-block">
+                  <div class="row"><span>Pitch (Hz)</span><span id="oscBPitchVal">153.00</span></div>
+                  <input type="range" id="oscBPitch" min="0" max="1" step="0.001" value="0">
+                </div>
+                <div class="control-block">
+                  <div class="row"><span>Volume</span><span id="oscBVolumeVal">0.82</span></div>
+                  <input type="range" id="oscBVolume" min="0" max="1" step="0.01" value="0.82">
+                </div>
+                <div class="sub">
+                  <div class="sub-title plain">Refinements</div>
+                  <div class="control-block">
+                    <div class="row"><span>Pan</span><span id="oscBPanVal">1.00</span></div>
+                    <input type="range" id="oscBPan" min="-1" max="1" step="0.01" value="1">
+                  </div>
+                  <div class="control-block">
+                    <div class="row"><span>Lowpass (Hz)</span><span id="oscBLowpassVal">20000</span></div>
+                    <input type="range" id="oscBLowpass" min="0" max="1" step="0.001" value="1">
+                  </div>
+                </div>
               </div>
+            </article>
+
+            <article class="tinker-pane" data-pane="2">
+              <div class="pane-card">
+                <div class="pane-head">
+                  <strong>Noise</strong>
+                  <button class="toggle-pill on" id="noiseOn">On</button>
+                </div>
+                <div class="control-block">
+                  <div class="row"><span>Type</span></div>
+                  <div class="type-grid" id="noiseTypeGrid">
+                    <button class="type-btn" data-type="white">White</button>
+                    <button class="type-btn active" data-type="pink">Pink</button>
+                    <button class="type-btn" data-type="brown">Brown</button>
+                  </div>
+                </div>
+                <div class="control-block">
+                  <div class="row"><span>Volume</span><span id="noiseLevelVal">0.10</span></div>
+                  <input type="range" id="noiseLevel" min="0" max="0.5" step="0.01" value="0.10">
+                </div>
+                <div class="sub">
+                  <div class="sub-title plain">Refinements</div>
+                  <div class="control-block">
+                    <div class="row"><span>Stereo width</span><span id="noiseWidthVal">0.60</span></div>
+                    <input type="range" id="noiseWidth" min="0" max="1" step="0.01" value="0.60">
+                  </div>
+                  <div class="control-block">
+                    <div class="row"><span>Lowpass (Hz)</span><span id="noiseLowpassVal">20000</span></div>
+                    <input type="range" id="noiseLowpass" min="0" max="1" step="0.001" value="1">
+                  </div>
+                </div>
+              </div>
+            </article>
+          </div>
+        </div>
+
+        <div class="island">
+          <div class="island-head">
+            <div class="island-title">Pulse</div>
+          </div>
+          <div class="island-sub">Applies to the whole mix, not just the source above. A slow amplitude sway.</div>
+          <div class="sub">
+            <div class="sub-title">Tone</div>
+            <div class="control-block">
+              <div class="row"><span>Depth</span><span id="pulseToneDepthVal">0.10</span></div>
+              <input type="range" id="pulseToneDepth" min="0" max="0.6" step="0.01" value="0.10">
             </div>
             <div class="control-block">
-              <div class="row"><span>Stereo width</span><span id="noiseWidthVal">0.60</span></div>
-              <input type="range" id="noiseWidth" min="0" max="1" step="0.01" value="0.60">
-            </div>
-            <div class="control-block">
-              <div class="row"><span>Lowpass (Hz)</span><span id="noiseLowpassVal">20000</span></div>
-              <input type="range" id="noiseLowpass" min="0" max="1" step="0.001" value="1">
-            </div>
-            <div class="control-block">
-              <div class="row"><span>Volume</span><span id="noiseLevelVal">0.10</span></div>
-              <input type="range" id="noiseLevel" min="0" max="0.5" step="0.01" value="0.10">
+              <div class="row"><span>Rate</span><span id="pulseToneRateVal">0.20 Hz</span></div>
+              <input type="range" id="pulseToneRate" min="0" max="1" step="0.001" value="0.273">
             </div>
           </div>
-        </article>
-      </div>
-      <div class="tinker-footer">
-        <div class="control-block">
-          <div class="row"><span>Tone pulse depth</span><span id="pulseToneDepthVal">0.10</span></div>
-          <input type="range" id="pulseToneDepth" min="0" max="0.6" step="0.01" value="0.10">
+          <div class="sub">
+            <div class="sub-title">Noise</div>
+            <div class="control-block">
+              <div class="row"><span>Depth</span><span id="pulseNoiseDepthVal">0.10</span></div>
+              <input type="range" id="pulseNoiseDepth" min="0" max="0.6" step="0.01" value="0.10">
+            </div>
+            <div class="control-block">
+              <div class="row"><span>Rate</span><span id="pulseNoiseRateVal">0.20 Hz</span></div>
+              <input type="range" id="pulseNoiseRate" min="0" max="1" step="0.001" value="0.273">
+            </div>
+          </div>
         </div>
-        <div class="control-block">
-          <div class="row"><span>Tone pulse rate</span><span id="pulseToneRateVal">0.20 Hz</span></div>
-          <input type="range" id="pulseToneRate" min="0" max="1" step="0.001" value="0.273">
-        </div>
-        <div class="control-block pulse-divider">
-          <div class="row"><span>Noise pulse depth</span><span id="pulseNoiseDepthVal">0.10</span></div>
-          <input type="range" id="pulseNoiseDepth" min="0" max="0.6" step="0.01" value="0.10">
-        </div>
-        <div class="control-block">
-          <div class="row"><span>Noise pulse rate</span><span id="pulseNoiseRateVal">0.20 Hz</span></div>
-          <input type="range" id="pulseNoiseRate" min="0" max="1" step="0.001" value="0.273">
-        </div>
-        <div class="save-row">
-          <input id="presetName" type="text" maxlength="24" placeholder="Preset name">
-          <button id="savePreset">Save</button>
+
+        <div class="island save-island">
+          <div class="island-head">
+            <div class="island-title">Presets</div>
+          </div>
+          <div class="island-sub">Name this sound and keep it. Presets are stored on this device only, and never leave it. Saved presets also appear in Sit, ready to play.</div>
+          <div class="edit-banner hidden" id="editBanner">
+            <span id="editTitle">Editing preset</span>
+            <button id="cancelEdit">Cancel</button>
+          </div>
+          <div class="save-row">
+            <input id="presetName" type="text" maxlength="24" placeholder="Name this sound">
+            <button id="savePreset" class="save-btn" disabled>Save</button>
+          </div>
+          <div id="tinkerChipsWrap" class="hidden">
+            <div class="chips-lbl">Saved on this device</div>
+            <div class="chips" id="tinkerChips"></div>
+          </div>
+          <div class="toast" id="tinkerToast"></div>
         </div>
       </div>
     </section>
@@ -1207,7 +1986,7 @@
         { id: "settle", name: "Settle", group: "daytime", beat: 5, carrier: 140, band: "theta", note: "downshift between tasks", noiseType: "brown", noiseLevel: 0.10, amDepth: 0.16, amRate: 0.11 },
         { id: "ground", name: "Ground", group: "daytime", beat: 7, carrier: 130, band: "theta", note: "body / grounding", noiseType: "brown", noiseLevel: 0.10, amDepth: 0.14, amRate: 0.13 },
         { id: "breathe", name: "Breathe", group: "daytime", beat: 6, carrier: 150, band: "theta", note: "slow breath-like pulse", noiseType: "pink", noiseLevel: 0.08, amDepth: 0.14, amRate: 0.10 },
-        { id: "drift", name: "Drift", group: "sleep", waves: true, beat: 0, carrier: 120, band: "waves", note: "pure ocean, speaker-friendly", noiseType: "brown", noiseLevel: 0.22, waveRate: 0.07, amDepth: 0.10, amRate: 0.10, carrierLevel: 0 },
+        { id: "drift", name: "Drift", group: "sleep", waves: true, beat: 0, carrier: 120, band: "waves", note: "pure ocean", noiseType: "brown", noiseLevel: 0.22, waveRate: 0.07, amDepth: 0.10, amRate: 0.10, carrierLevel: 0 },
         { id: "shore", name: "Shore", group: "sleep", waves: true, beat: 2.5, carrier: 120, band: "delta + waves", note: "waves + faint delta", noiseType: "brown", noiseLevel: 0.20, waveRate: 0.06, amDepth: 0.10, amRate: 0.10, carrierLevel: 0.40 },
         { id: "deep", name: "Deep", group: "sleep", beat: 2, carrier: 110, band: "delta", note: "headphone wind-down", noiseType: "brown", noiseLevel: 0.12, amDepth: 0.18, amRate: 0.08 },
         { id: "tide", name: "Tide", group: "sleep", waves: true, beat: 0, carrier: 120, band: "waves", note: "slow surf for staying asleep", noiseType: "brown", noiseLevel: 0.22, waveRate: 0.05, amDepth: 0.10, amRate: 0.10, carrierLevel: 0 }
@@ -1259,6 +2038,7 @@
       }
 
       const DEFAULTS = {
+        mode: "sit",
         masterVol: 0.65,
         durationMin: 10,
         durationMode: "timed",
@@ -1278,6 +2058,10 @@
         { key: "daytime", label: "Daytime" },
         { key: "sleep", label: "Deep Sleep" }
       ];
+      // Sit group theme, expressed as a descent fraction (0 = Alpha/teal, 1 = Delta/magenta).
+      // Tunable: this is the only place these live.
+      const SIT_GROUP_FRAC = { focus: 0.0, daytime: 0.45, sleep: 1.0 };
+      const TINKER_FRAC = 0.52;
 
       const SIT_PRESET_ALIASES = {
         drop: "deep"
@@ -1325,18 +2109,24 @@
         sitNoiseOn: document.getElementById("sitNoiseOn"),
         sitNoiseLevel: document.getElementById("sitNoiseLevel"),
         sitNoiseLevelVal: document.getElementById("sitNoiseLevelVal"),
-        resetSit: document.getElementById("resetSit"),
+        resetMode: document.getElementById("resetMode"),
+        resetTinkerInline: document.getElementById("resetTinkerInline"),
         exploreNoiseOn: document.getElementById("exploreNoiseOn"),
         exploreNoiseLevel: document.getElementById("exploreNoiseLevel"),
         exploreNoiseLevelVal: document.getElementById("exploreNoiseLevelVal"),
-        resetExplore: document.getElementById("resetExplore"),
-        resetTinker: document.getElementById("resetTinker"),
         editBanner: document.getElementById("editBanner"),
         editTitle: document.getElementById("editTitle"),
         cancelEdit: document.getElementById("cancelEdit"),
         tBeatReadout: document.getElementById("tBeatReadout"),
+        tBeatBand: document.getElementById("tBeatBand"),
+        brainMapTrack: document.getElementById("brainMapTrack"),
+        brainMapMarker: document.getElementById("brainMapMarker"),
+        brainMapInfoBtn: document.getElementById("brainMapInfoBtn"),
+        brainMapInfo: document.getElementById("brainMapInfo"),
         tinkerSwipe: document.getElementById("tinkerSwipe"),
         tinkerDots: document.getElementById("tinkerDots"),
+        tinkerSeg: document.getElementById("tinkerSeg"),
+        tinkerSegGlide: document.getElementById("tinkerSegGlide"),
         oscAOn: document.getElementById("oscAOn"),
         oscAPitch: document.getElementById("oscAPitch"),
         oscAPitchVal: document.getElementById("oscAPitchVal"),
@@ -1372,7 +2162,10 @@
         pulseNoiseRate: document.getElementById("pulseNoiseRate"),
         pulseNoiseRateVal: document.getElementById("pulseNoiseRateVal"),
         presetName: document.getElementById("presetName"),
-        savePreset: document.getElementById("savePreset")
+        savePreset: document.getElementById("savePreset"),
+        tinkerChipsWrap: document.getElementById("tinkerChipsWrap"),
+        tinkerChips: document.getElementById("tinkerChips"),
+        tinkerToast: document.getElementById("tinkerToast")
       };
 
       const state = {
@@ -1401,6 +2194,7 @@
         customPresets: [],
         editingPresetId: null,
         renamingPresetId: null,
+        activeSitPaneIndex: -1,
         activeEngine: null,
         tinker: null,
         wakeLock: null
@@ -1562,18 +2356,21 @@
       }
 
       function loadState() {
+        // Parameters always start at defaults on launch. Only saved custom presets and
+        // device preferences persist across sessions.
+        state.tinker = cloneTinkerDefaults();
+        state.mode = DEFAULTS.mode || "sit";
+        state.selectedSit = DEFAULTS.sitPreset;
+        state.selectedExplore = DEFAULTS.explorePreset;
+        state.customPresets = [];
         try {
           const raw = localStorage.getItem("descentState");
           if (!raw) return;
           const s = JSON.parse(raw);
-          if (s.selectedSit) state.selectedSit = SIT_PRESET_ALIASES[s.selectedSit] || s.selectedSit;
-          if (s.selectedExplore) state.selectedExplore = s.selectedExplore;
-          if (s.mode) state.mode = s.mode;
           if ([5,10,15,20,30].includes(s.durationMin)) state.durationMin = s.durationMin;
           if (s.durationMode === "infinite" || s.durationMode === "timed") state.durationMode = s.durationMode;
           if (typeof s.masterVol === "number") state.masterVol = Math.max(0, Math.min(1, s.masterVol));
           if (typeof s.keepAwake === "boolean") state.keepAwake = s.keepAwake;
-          state.tinker = normalizeTinkerState(s.tinker);
           state.customPresets = Array.isArray(s.customPresets) ? s.customPresets.map(normalizePreset).filter(Boolean) : [];
         } catch (e) {
           state.customPresets = [];
@@ -1795,24 +2592,33 @@
         if (!octx || !orb.r) return;
         const R = orb.r;
         const core = octx.createRadialGradient(orb.cx, orb.cy - R * 0.12, R * 0.05, orb.cx, orb.cy, R);
-        core.addColorStop(0, hexA(orb.glow, 0.42));
-        core.addColorStop(0.45, hexA(orb.glow, 0.16));
+        core.addColorStop(0, hexA(orb.glow, 0.34));
+        core.addColorStop(0.34, hexA(orb.glow, 0.13));
+        core.addColorStop(0.68, hexA(orb.glow, 0.035));
         core.addColorStop(1, hexA(orb.glow, 0));
         const rim = octx.createRadialGradient(orb.cx, orb.cy, R * 0.72, orb.cx, orb.cy, R);
         rim.addColorStop(0, "rgba(255,255,255,0)");
-        rim.addColorStop(0.86, hexA(orb.glow, 0.10));
+        rim.addColorStop(0.72, hexA(orb.glow, 0.05));
+        rim.addColorStop(0.88, hexA(orb.glow, 0.18));
         rim.addColorStop(1, "rgba(255,255,255,0)");
+        const portal = octx.createRadialGradient(orb.cx, orb.cy, R * 0.53, orb.cx, orb.cy, R * 0.86);
+        portal.addColorStop(0, "rgba(255,255,255,0)");
+        portal.addColorStop(0.48, hexA(orb.glow, 0.035));
+        portal.addColorStop(0.62, hexA(orb.glow, 0.34));
+        portal.addColorStop(0.68, "rgba(242,235,255,0.72)");
+        portal.addColorStop(0.74, hexA(orb.glow, 0.22));
+        portal.addColorStop(1, "rgba(255,255,255,0)");
         const blob = octx.createRadialGradient(0, 0, 0, 0, 0, R * 0.5);
         blob.addColorStop(0, hexA(orb.glow, 0.5));
         blob.addColorStop(1, hexA(orb.glow, 0));
-        orb.grads = { core: core, rim: rim, blob: blob };
+        orb.grads = { core: core, rim: rim, portal: portal, blob: blob };
       }
 
       function sizeOrb() {
         if (!els.orbCanvas || !octx || !els.orbCanvas.parentElement) return;
         const dpr = Math.min(window.devicePixelRatio || 1, 2);
         const zone = els.orbCanvas.parentElement.getBoundingClientRect();
-        const size = Math.max(120, Math.min(zone.width, zone.height) * 0.82);
+        const size = Math.max(120, Math.min(zone.width, zone.height) * 0.94);
         els.orbCanvas.style.width = size + "px";
         els.orbCanvas.style.height = size + "px";
         els.orbCanvas.width = Math.round(size * dpr);
@@ -1840,6 +2646,38 @@
         octx.beginPath();
         octx.arc(orb.cx, orb.cy, R, 0, Math.PI * 2);
         octx.fill();
+        octx.globalCompositeOperation = "lighter";
+        for (let i = 0; i < 14; i++) {
+          const ratio = 0.66 + i * 0.022;
+          const shimmer = 0.025 + (Math.sin(orb.t * (0.55 + i * 0.025) + i * 0.8) + 1) * 0.018;
+          octx.strokeStyle = hexA(orb.glow, shimmer);
+          octx.lineWidth = Math.max(0.75, R * 0.0025);
+          octx.beginPath();
+          octx.arc(orb.cx, orb.cy, R * ratio, 0, Math.PI * 2);
+          octx.stroke();
+        }
+        octx.fillStyle = orb.grads.portal;
+        octx.beginPath();
+        octx.arc(orb.cx, orb.cy, R, 0, Math.PI * 2);
+        octx.fill();
+        octx.save();
+        octx.strokeStyle = "rgba(242,235,255,0.52)";
+        octx.lineWidth = Math.max(1.4, R * 0.012);
+        octx.shadowColor = orb.glow;
+        octx.shadowBlur = Math.max(8, R * 0.08);
+        octx.beginPath();
+        octx.arc(orb.cx, orb.cy, R * 0.742, 0, Math.PI * 2);
+        octx.stroke();
+        octx.restore();
+        for (let i = 0; i < 46; i++) {
+          const angle = i * 2.399963 + orb.t * 0.018 * (i % 2 ? 1 : -1);
+          const radius = R * (0.77 + ((i * 37) % 20) / 100);
+          const alpha = 0.08 + (Math.sin(orb.t * 0.7 + i) + 1) * 0.045;
+          octx.fillStyle = "rgba(242,235,255," + alpha.toFixed(3) + ")";
+          octx.beginPath();
+          octx.arc(orb.cx + Math.cos(angle) * radius, orb.cy + Math.sin(angle) * radius, Math.max(0.65, R * 0.003), 0, Math.PI * 2);
+          octx.fill();
+        }
         if (!orb.reduced) {
           octx.globalCompositeOperation = "lighter";
           for (let i = 0; i < 3; i++) {
@@ -1924,6 +2762,8 @@
           applyDescent(getPresetDescentFrac(getExplorePreset(state.selectedExplore)));
         } else if (state.mode === "sit") {
           applyDescent(getPresetDescentFrac(getSitPreset(state.selectedSit)));
+        } else if (state.mode === "tinker") {
+          applyDescent(TINKER_FRAC);
         }
       }
 
@@ -2429,21 +3269,21 @@
 
       function getTinkerPrecisionControls() {
         return [
-          { id: "oscAPitch", label: "Osc A pitch", slider: els.oscAPitch, readout: els.oscAPitchVal, min: 20, max: 2000, step: 0.5, decimals: 2, scale: "log" },
-          { id: "oscALowpass", label: "Osc A lowpass", slider: els.oscALowpass, readout: els.oscALowpassVal, min: 200, max: 20000, step: 100, decimals: 0, scale: "log" },
-          { id: "oscAPan", label: "Osc A pan", slider: els.oscAPan, readout: els.oscAPanVal, min: -1, max: 1, step: 0.05, decimals: 2, scale: "linear" },
-          { id: "oscAVolume", label: "Osc A volume", slider: els.oscAVolume, readout: els.oscAVolumeVal, min: 0, max: 1, step: 0.02, decimals: 2, scale: "linear" },
-          { id: "oscBPitch", label: "Osc B pitch", slider: els.oscBPitch, readout: els.oscBPitchVal, min: 20, max: 2000, step: 0.5, decimals: 2, scale: "log" },
-          { id: "oscBLowpass", label: "Osc B lowpass", slider: els.oscBLowpass, readout: els.oscBLowpassVal, min: 200, max: 20000, step: 100, decimals: 0, scale: "log" },
-          { id: "oscBPan", label: "Osc B pan", slider: els.oscBPan, readout: els.oscBPanVal, min: -1, max: 1, step: 0.05, decimals: 2, scale: "linear" },
-          { id: "oscBVolume", label: "Osc B volume", slider: els.oscBVolume, readout: els.oscBVolumeVal, min: 0, max: 1, step: 0.02, decimals: 2, scale: "linear" },
-          { id: "noiseWidth", label: "Noise stereo width", slider: els.noiseWidth, readout: els.noiseWidthVal, min: 0, max: 1, step: 0.05, decimals: 2, scale: "linear" },
-          { id: "noiseLowpass", label: "Noise lowpass", slider: els.noiseLowpass, readout: els.noiseLowpassVal, min: 200, max: 20000, step: 100, decimals: 0, scale: "log" },
-          { id: "noiseLevel", label: "Noise volume", slider: els.noiseLevel, readout: els.noiseLevelVal, min: 0, max: 0.5, step: 0.01, decimals: 2, scale: "linear" },
-          { id: "pulseToneDepth", label: "Tone pulse depth", slider: els.pulseToneDepth, readout: els.pulseToneDepthVal, min: 0, max: 0.6, step: 0.01, decimals: 2, scale: "linear" },
-          { id: "pulseToneRate", label: "Tone pulse rate", slider: els.pulseToneRate, readout: els.pulseToneRateVal, min: HZ_MIN, max: HZ_MAX, step: 0.05, decimals: 2, unit: " Hz", scale: "pulse" },
-          { id: "pulseNoiseDepth", label: "Noise pulse depth", slider: els.pulseNoiseDepth, readout: els.pulseNoiseDepthVal, min: 0, max: 0.6, step: 0.01, decimals: 2, scale: "linear" },
-          { id: "pulseNoiseRate", label: "Noise pulse rate", slider: els.pulseNoiseRate, readout: els.pulseNoiseRateVal, min: HZ_MIN, max: HZ_MAX, step: 0.05, decimals: 2, unit: " Hz", scale: "pulse" }
+          { id: "oscAPitch", label: "Osc A pitch", slider: els.oscAPitch, readout: els.oscAPitchVal, min: 20, max: 2000, step: 0.5, fineStep: 0.01, holdCap: 200, decimals: 2, scale: "log" },
+          { id: "oscALowpass", label: "Osc A lowpass", slider: els.oscALowpass, readout: els.oscALowpassVal, min: 200, max: 20000, step: 100, fineStep: 10, holdCap: 50, decimals: 0, scale: "log" },
+          { id: "oscAPan", label: "Osc A pan", slider: els.oscAPan, readout: els.oscAPanVal, min: -1, max: 1, step: 0.05, fineStep: 0.01, holdCap: 25, decimals: 2, scale: "linear" },
+          { id: "oscAVolume", label: "Osc A volume", slider: els.oscAVolume, readout: els.oscAVolumeVal, min: 0, max: 1, step: 0.02, fineStep: 0.01, holdCap: 25, decimals: 2, scale: "linear" },
+          { id: "oscBPitch", label: "Osc B pitch", slider: els.oscBPitch, readout: els.oscBPitchVal, min: 20, max: 2000, step: 0.5, fineStep: 0.01, holdCap: 200, decimals: 2, scale: "log" },
+          { id: "oscBLowpass", label: "Osc B lowpass", slider: els.oscBLowpass, readout: els.oscBLowpassVal, min: 200, max: 20000, step: 100, fineStep: 10, holdCap: 50, decimals: 0, scale: "log" },
+          { id: "oscBPan", label: "Osc B pan", slider: els.oscBPan, readout: els.oscBPanVal, min: -1, max: 1, step: 0.05, fineStep: 0.01, holdCap: 25, decimals: 2, scale: "linear" },
+          { id: "oscBVolume", label: "Osc B volume", slider: els.oscBVolume, readout: els.oscBVolumeVal, min: 0, max: 1, step: 0.02, fineStep: 0.01, holdCap: 25, decimals: 2, scale: "linear" },
+          { id: "noiseWidth", label: "Noise stereo width", slider: els.noiseWidth, readout: els.noiseWidthVal, min: 0, max: 1, step: 0.05, fineStep: 0.01, holdCap: 25, decimals: 2, scale: "linear" },
+          { id: "noiseLowpass", label: "Noise lowpass", slider: els.noiseLowpass, readout: els.noiseLowpassVal, min: 200, max: 20000, step: 100, fineStep: 10, holdCap: 50, decimals: 0, scale: "log" },
+          { id: "noiseLevel", label: "Noise volume", slider: els.noiseLevel, readout: els.noiseLevelVal, min: 0, max: 0.5, step: 0.01, fineStep: 0.01, holdCap: 25, decimals: 2, scale: "linear" },
+          { id: "pulseToneDepth", label: "Tone pulse depth", slider: els.pulseToneDepth, readout: els.pulseToneDepthVal, min: 0, max: 0.6, step: 0.01, fineStep: 0.01, holdCap: 25, decimals: 2, scale: "linear" },
+          { id: "pulseToneRate", label: "Tone pulse rate", slider: els.pulseToneRate, readout: els.pulseToneRateVal, min: HZ_MIN, max: HZ_MAX, step: 0.05, fineStep: 0.01, holdCap: 25, decimals: 2, unit: " Hz", scale: "pulse" },
+          { id: "pulseNoiseDepth", label: "Noise pulse depth", slider: els.pulseNoiseDepth, readout: els.pulseNoiseDepthVal, min: 0, max: 0.6, step: 0.01, fineStep: 0.01, holdCap: 25, decimals: 2, scale: "linear" },
+          { id: "pulseNoiseRate", label: "Noise pulse rate", slider: els.pulseNoiseRate, readout: els.pulseNoiseRateVal, min: HZ_MIN, max: HZ_MAX, step: 0.05, fineStep: 0.01, holdCap: 25, decimals: 2, unit: " Hz", scale: "pulse" }
         ];
       }
 
@@ -2473,16 +3313,39 @@
         stepControl(meta.slider, sliderValueFromReal(meta, realValue));
       }
 
-      function stepTinkerPrecisionControl(meta, direction) {
+      function snapTo(value, grid) {
+        const snapped = Math.round(value / grid) * grid;
+        return Number(snapped.toFixed(6));
+      }
+
+      function stepTinkerPrecisionControl(meta, direction, multiplier) {
+        const fine = meta.fineStep != null ? meta.fineStep : Math.pow(10, -(meta.decimals || 0));
+        const inc = fine * (multiplier || 1);
         const current = realValueFromTinkerSlider(meta);
-        const next = clampValue(current + direction * meta.step, meta.min, meta.max);
+        const next = clampValue(snapTo(current + direction * inc, fine), meta.min, meta.max);
         applyTinkerPrecisionValue(meta, next);
       }
 
+      const HOLD_START_MS = 400;
+      const REPEAT_MS = 120;
+      const FAST_AFTER_MS = 1600;
+      const FAST_MS = 50;
+      const GROW_EVERY_MS = 600;
+
       function bindTinkerStepper(btn, meta, direction) {
-        let holdTimer = 0;
-        let repeatTimer = 0;
-        let fastTimer = 0;
+        let holdTimer = 0, repeatTimer = 0, fastTimer = 0, pressedAt = 0;
+        const cap = meta.holdCap || 25;
+
+        function multiplierNow() {
+          const held = performance.now() - pressedAt - HOLD_START_MS;
+          if (held <= 0) return 1;
+          return Math.min(cap, Math.pow(2, Math.floor(held / GROW_EVERY_MS)));
+        }
+
+        function tick() {
+          stepTinkerPrecisionControl(meta, direction, multiplierNow());
+        }
+
         function clearRepeat() {
           window.clearTimeout(holdTimer);
           window.clearTimeout(fastTimer);
@@ -2494,23 +3357,19 @@
         btn.addEventListener("pointerdown", function (e) {
           e.preventDefault();
           clearRepeat();
-          stepTinkerPrecisionControl(meta, direction);
+          pressedAt = performance.now();
+          stepTinkerPrecisionControl(meta, direction, 1);
           holdTimer = window.setTimeout(function () {
-            repeatTimer = window.setInterval(function () {
-              stepTinkerPrecisionControl(meta, direction);
-            }, 120);
+            repeatTimer = window.setInterval(tick, REPEAT_MS);
             fastTimer = window.setTimeout(function () {
               window.clearInterval(repeatTimer);
-              repeatTimer = window.setInterval(function () {
-                stepTinkerPrecisionControl(meta, direction);
-              }, 50);
-            }, 1600);
-          }, 400);
+              repeatTimer = window.setInterval(tick, FAST_MS);
+            }, FAST_AFTER_MS - HOLD_START_MS);
+          }, HOLD_START_MS);
         });
         ["pointerup", "pointercancel", "pointerleave", "lostpointercapture"].forEach(function (eventName) {
           btn.addEventListener(eventName, clearRepeat);
         });
-        btn.addEventListener("click", function (e) { e.preventDefault(); });
       }
 
       function restoreExactReadout(readout) {
@@ -2680,6 +3539,14 @@
         saveState();
       }
 
+      function beatBand(hz) {
+        if (hz < 4) return { name: "Delta band", color: "#c85ad0" };
+        if (hz < 8) return { name: "Theta band", color: "#7c6cf0" };
+        if (hz < 13) return { name: "Alpha band", color: "#4fd1b5" };
+        if (hz < 30) return { name: "Beta band", color: "#4aa3e6" };
+        return { name: "Gamma band", color: "#e58fe8" };
+      }
+
       function updateTinkerReadouts() {
         const t = state.tinker || cloneTinkerDefaults();
         els.oscAPitch.value = String(valueToLogSlider(t.oscA.pitch, 20, 2000));
@@ -2721,12 +3588,21 @@
         els.pulseNoiseDepthVal.textContent = t.pulse.noiseDepth.toFixed(2);
         els.pulseNoiseRateVal.textContent = t.pulse.noiseRate.toFixed(2) + " Hz";
 
-        if (t.oscA.on && t.oscB.on) {
-          els.tBeatReadout.textContent = "Beat: " + Math.abs(t.oscA.pitch - t.oscB.pitch).toFixed(1) + " Hz";
-          els.tBeatReadout.classList.remove("muted");
-        } else {
-          els.tBeatReadout.textContent = "Beat: -- Hz";
-          els.tBeatReadout.classList.add("muted");
+        const beatHz = Math.abs(t.oscA.pitch - t.oscB.pitch);
+        const band = beatBand(beatHz);
+        els.tBeatReadout.textContent = beatHz.toFixed(2);
+        if (els.tBeatBand) {
+          els.tBeatBand.textContent = band.name;
+          els.tBeatBand.style.color = band.color;
+        }
+        if (els.brainMapTrack && els.brainMapMarker) {
+          const mapMin = 0.5;
+          const mapMax = 45;
+          const mappedBeat = Math.max(mapMin, Math.min(mapMax, beatHz));
+          const markerPct = ((mappedBeat - mapMin) / (mapMax - mapMin)) * 100;
+          els.brainMapMarker.style.left = markerPct.toFixed(2) + "%";
+          els.brainMapTrack.setAttribute("aria-valuenow", beatHz.toFixed(2));
+          els.brainMapTrack.setAttribute("aria-valuetext", beatHz.toFixed(2) + " hertz, " + band.name);
         }
       }
 
@@ -3569,6 +4445,11 @@
           fadeOutActiveEngine(1);
         }
         state.mode = mode;
+        if (els.resetMode) els.resetMode.setAttribute("aria-label", "Reset " + mode + " settings");
+        if (mode !== "tinker" && els.brainMapInfo && els.brainMapInfoBtn) {
+          els.brainMapInfo.classList.add("hidden");
+          els.brainMapInfoBtn.setAttribute("aria-expanded", "false");
+        }
         const tabs = els.modeTabs.querySelectorAll(".tab");
         tabs.forEach(function (btn) {
           btn.classList.toggle("active", btn.dataset.mode === mode);
@@ -3587,6 +4468,7 @@
         if (!state.editingPresetId) {
           els.editBanner.classList.add("hidden");
           els.savePreset.textContent = "Save";
+          updatePresetSaveState();
           return;
         }
         const p = state.customPresets.find(function (x) { return x.id === state.editingPresetId; });
@@ -3597,6 +4479,7 @@
         els.editTitle.textContent = "Editing '" + p.name + "'";
         els.editBanner.classList.remove("hidden");
         els.savePreset.textContent = "Overwrite";
+        updatePresetSaveState();
       }
 
       function beginEditPreset(p) {
@@ -3605,12 +4488,133 @@
         els.presetName.value = p.name;
         setTinkerControlsFromPreset(isSchemaV2(p) ? p : legacyToTinkerPreset(p));
         updateEditBanner();
+        renderTinkerChips();
       }
 
       function exitEditMode() {
         state.editingPresetId = null;
         els.editBanner.classList.add("hidden");
         els.savePreset.textContent = "Save";
+        updatePresetSaveState();
+        renderTinkerChips();
+      }
+
+      function updatePresetSaveState() {
+        if (!els.savePreset || !els.presetName) return;
+        els.savePreset.disabled = !els.presetName.value.trim();
+      }
+
+      let tinkerToastTimer = 0;
+      function showTinkerToast(message) {
+        if (!els.tinkerToast) return;
+        els.tinkerToast.textContent = message;
+        els.tinkerToast.classList.add("show");
+        window.clearTimeout(tinkerToastTimer);
+        tinkerToastTimer = window.setTimeout(function () {
+          els.tinkerToast.classList.remove("show");
+        }, 1900);
+      }
+
+      function commitCustomPresetRename(p, nextName) {
+        const clean = nextName.trim();
+        if (clean) {
+          p.name = clean;
+          if (state.editingPresetId === p.id) {
+            els.presetName.value = clean;
+            updateEditBanner();
+          }
+          saveState();
+        }
+        state.renamingPresetId = null;
+        renderMineTiles();
+        renderTinkerChips();
+      }
+
+      function deleteCustomPreset(p) {
+        if (!window.confirm("Delete '" + p.name + "'?")) return;
+        state.customPresets = state.customPresets.filter(function (x) { return x.id !== p.id; });
+        if (state.selectedSit === p.id) state.selectedSit = DEFAULTS.sitPreset;
+        if (state.editingPresetId === p.id) exitEditMode();
+        renderSitTiles();
+        renderMineTiles();
+        renderTinkerChips();
+        saveState();
+      }
+
+      function renderTinkerChips() {
+        if (!els.tinkerChips || !els.tinkerChipsWrap) return;
+        els.tinkerChips.innerHTML = "";
+        if (!state.customPresets.length) {
+          els.tinkerChipsWrap.classList.add("hidden");
+          return;
+        }
+        els.tinkerChipsWrap.classList.remove("hidden");
+        state.customPresets.forEach(function (p) {
+          const chip = document.createElement("span");
+          chip.className = "chip" + (state.editingPresetId === p.id ? " active" : "");
+          if (state.renamingPresetId === p.id) {
+            const input = document.createElement("input");
+            input.type = "text";
+            input.maxLength = 24;
+            input.value = p.name;
+            input.setAttribute("aria-label", "Rename " + p.name);
+            const save = document.createElement("button");
+            save.type = "button";
+            save.className = "act";
+            save.textContent = "\u2713";
+            save.setAttribute("aria-label", "Save preset name");
+            save.addEventListener("click", function () {
+              commitCustomPresetRename(p, input.value);
+            });
+            input.addEventListener("keydown", function (e) {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                commitCustomPresetRename(p, input.value);
+              } else if (e.key === "Escape") {
+                e.preventDefault();
+                state.renamingPresetId = null;
+                renderMineTiles();
+                renderTinkerChips();
+              }
+            });
+            chip.appendChild(input);
+            chip.appendChild(save);
+            window.setTimeout(function () {
+              input.focus();
+              input.select();
+            }, 0);
+          } else {
+            const load = document.createElement("button");
+            load.type = "button";
+            load.className = "load";
+            load.textContent = p.name;
+            load.addEventListener("click", function () {
+              beginEditPreset(p);
+            });
+            const rename = document.createElement("button");
+            rename.type = "button";
+            rename.className = "act";
+            rename.textContent = "\u270e";
+            rename.setAttribute("aria-label", "Rename " + p.name);
+            rename.addEventListener("click", function () {
+              state.renamingPresetId = p.id;
+              renderMineTiles();
+              renderTinkerChips();
+            });
+            const del = document.createElement("button");
+            del.type = "button";
+            del.className = "act del";
+            del.textContent = "\u00d7";
+            del.setAttribute("aria-label", "Delete " + p.name);
+            del.addEventListener("click", function () {
+              deleteCustomPreset(p);
+            });
+            chip.appendChild(load);
+            chip.appendChild(rename);
+            chip.appendChild(del);
+          }
+          els.tinkerChips.appendChild(chip);
+        });
       }
 
       function resetSitMode() {
@@ -3687,7 +4691,7 @@
               '<span class="nm">' + escapeHtml(p.name) + '</span>' +
               '<span class="sub">' + escapeHtml(detail) + '</span>' +
               '<span class="note">' + escapeHtml(p.note) + '</span>' +
-              (speakerFriendly ? '<span class="tag">speaker-friendly</span>' : "") +
+              (speakerFriendly ? '<span class="badge" title="Works without headphones" aria-label="Speaker friendly">speaker</span>' : "") +
             '</span>';
           b.addEventListener("click", function () {
             selectSitPreset(p);
@@ -3719,18 +4723,12 @@
             const cancel = document.createElement("button");
             cancel.textContent = "Cancel";
             save.addEventListener("click", function () {
-              const nextName = input.value.trim();
-              if (nextName) {
-                p.name = nextName;
-                if (state.editingPresetId === p.id) updateEditBanner();
-                saveState();
-              }
-              state.renamingPresetId = null;
-              renderMineTiles();
+              commitCustomPresetRename(p, input.value);
             });
             cancel.addEventListener("click", function () {
               state.renamingPresetId = null;
               renderMineTiles();
+              renderTinkerChips();
             });
             actions.appendChild(save);
             actions.appendChild(cancel);
@@ -3743,6 +4741,7 @@
             name.addEventListener("click", function () {
               state.renamingPresetId = p.id;
               renderMineTiles();
+              renderTinkerChips();
             });
             const meta = document.createElement("span");
             if (isSchemaV2(p)) {
@@ -3767,13 +4766,7 @@
             });
             edit.addEventListener("click", function () { beginEditPreset(p); });
             del.addEventListener("click", function () {
-              if (!window.confirm("Delete '" + p.name + "'?")) return;
-              state.customPresets = state.customPresets.filter(function (x) { return x.id !== p.id; });
-              if (state.selectedSit === p.id) state.selectedSit = DEFAULTS.sitPreset;
-              if (state.editingPresetId === p.id) exitEditMode();
-              renderSitTiles();
-              renderMineTiles();
-              saveState();
+              deleteCustomPreset(p);
             });
             actions.appendChild(use);
             actions.appendChild(edit);
@@ -3796,9 +4789,10 @@
           b.className = "tile preset-tile explore-tile" + (p.id === state.selectedExplore ? " sel" : "");
           b.setAttribute("aria-pressed", p.id === state.selectedExplore ? "true" : "false");
           b.style.setProperty("--tint", DESCENT_PALETTE[i].glow);
+          b.style.setProperty("--wave-hue", [95, 55, 0, -18, -30][i] + "deg");
           b.innerHTML =
             '<span class="dot"></span>' +
-            '<span class="txt"><span class="nm">' + escapeHtml(p.name) + '</span><span class="sub">' + escapeHtml(p.state) + '</span></span>' +
+            '<span class="txt"><span class="nm">' + escapeHtml(p.name) + '</span><img class="explore-wave" src="icons/resonance-wave.png" alt=""><span class="sub">' + escapeHtml(p.state) + '</span></span>' +
             '<span class="rn">' + ROMAN[i] + '</span>';
           b.addEventListener("click", function () {
             state.selectedExplore = p.id;
@@ -3813,17 +4807,35 @@
       }
 
       function setActiveTinkerPane(index) {
-        els.tinkerDots.querySelectorAll(".tinker-dot").forEach(function (dot) {
-          dot.classList.toggle("active", Number(dot.dataset.pane) === index);
-        });
+        if (els.tinkerDots) {
+          els.tinkerDots.querySelectorAll(".tinker-dot").forEach(function (dot) {
+            dot.classList.toggle("active", Number(dot.dataset.pane) === index);
+          });
+        }
+        if (els.tinkerSeg) {
+          els.tinkerSeg.querySelectorAll("button[data-pane]").forEach(function (btn) {
+            btn.classList.toggle("on", Number(btn.dataset.pane) === index);
+          });
+        }
+        if (els.tinkerSegGlide) {
+          els.tinkerSegGlide.style.transform = "translateX(" + (index * 100) + "%)";
+        }
       }
 
       function setActiveSitPane(index) {
-        els.sitDots.querySelectorAll(".tinker-dot").forEach(function (dot) {
-          dot.classList.toggle("active", Number(dot.dataset.pane) === index);
+        els.sitDots.querySelectorAll(".sit-category").forEach(function (category) {
+          const active = Number(category.dataset.pane) === index;
+          category.classList.toggle("active", active);
+          category.setAttribute("aria-pressed", active ? "true" : "false");
         });
         const group = SIT_GROUPS[index] || SIT_GROUPS[0];
         els.sitGroupLabel.textContent = group.label;
+        if (index === state.activeSitPaneIndex) return;
+        state.activeSitPaneIndex = index;
+        if (state.mode === "sit") {
+          const frac = SIT_GROUP_FRAC[group.key];
+          if (frac != null) applyDescent(frac);
+        }
       }
 
       function setupSwipePager(swipeEl, setActive) {
@@ -4039,23 +5051,36 @@
           if (state.isPlaying && state.activeEngine === "tinker") applyTinkerStateLive();
           saveState();
         });
-        els.tinkerDots.addEventListener("click", function (e) {
-          const dot = e.target.closest(".tinker-dot");
-          if (!dot) return;
-          const pane = els.tinkerSwipe.querySelector('.tinker-pane[data-pane="' + dot.dataset.pane + '"]');
+        els.tinkerSeg.addEventListener("click", function (e) {
+          const btn = e.target.closest("button[data-pane]");
+          if (!btn) return;
+          const paneIndex = Number(btn.dataset.pane);
+          const pane = els.tinkerSwipe.querySelector('.tinker-pane[data-pane="' + paneIndex + '"]');
           if (pane) pane.scrollIntoView({ behavior: "smooth", inline: "center", block: "nearest" });
+          setActiveTinkerPane(paneIndex);
         });
         els.sitDots.addEventListener("click", function (e) {
-          const dot = e.target.closest(".tinker-dot");
-          if (!dot) return;
-          const pane = els.sitSwipe.querySelector('.tinker-pane[data-pane="' + dot.dataset.pane + '"]');
+          const category = e.target.closest(".sit-category");
+          if (!category) return;
+          const paneIndex = Number(category.dataset.pane);
+          const pane = els.sitSwipe.querySelector('.tinker-pane[data-pane="' + paneIndex + '"]');
           if (pane) pane.scrollIntoView({ behavior: "smooth", inline: "center", block: "nearest" });
+          setActiveSitPane(paneIndex);
         });
 
-        els.resetSit.addEventListener("click", resetSitMode);
-        els.resetExplore.addEventListener("click", resetExploreMode);
-        els.resetTinker.addEventListener("click", resetTinkerMode);
+        els.resetMode.addEventListener("click", function () {
+          if (state.mode === "sit") resetSitMode();
+          else if (state.mode === "explore") resetExploreMode();
+          else resetTinkerMode();
+        });
+        els.resetTinkerInline.addEventListener("click", resetTinkerMode);
+        els.brainMapInfoBtn.addEventListener("click", function () {
+          const expanded = els.brainMapInfoBtn.getAttribute("aria-expanded") === "true";
+          els.brainMapInfoBtn.setAttribute("aria-expanded", expanded ? "false" : "true");
+          els.brainMapInfo.classList.toggle("hidden", expanded);
+        });
         els.cancelEdit.addEventListener("click", exitEditMode);
+        els.presetName.addEventListener("input", updatePresetSaveState);
 
         els.savePreset.addEventListener("click", function () {
           const name = els.presetName.value.trim();
@@ -4080,6 +5105,9 @@
           }
           els.presetName.value = "";
           renderMineTiles();
+          renderTinkerChips();
+          updatePresetSaveState();
+          showTinkerToast("Saved. Find it in Sit too.");
           saveState();
         });
       }
@@ -4090,6 +5118,7 @@
         if (state.selectedSit) syncSitNoiseForPreset(getSitPreset(state.selectedSit));
         renderSitTiles();
         renderMineTiles();
+        renderTinkerChips();
         renderExploreTiles();
         els.masterVolume.value = String(state.masterVol);
         els.masterVal.textContent = state.masterVol.toFixed(2);
@@ -4103,6 +5132,7 @@
         els.exploreNoiseLevelVal.textContent = Number(els.exploreNoiseLevel.value).toFixed(2);
         updateTinkerReadouts();
         updateEditBanner();
+        updatePresetSaveState();
         setupTinkerPrecisionControls();
         setupSitPager();
         setupTinkerPager();
@@ -4117,6 +5147,11 @@
       setupOrb();
       initUiFromState();
       setupMediaSessionControls();
+      if ("serviceWorker" in navigator && (location.protocol === "https:" || location.hostname === "localhost")) {
+        window.addEventListener("load", function () {
+          navigator.serviceWorker.register("./sw.js").catch(function () {});
+        });
+      }
     })();
   </script>
 </body>
