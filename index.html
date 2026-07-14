@@ -245,7 +245,7 @@
       border-color: color-mix(in srgb, var(--accent) 35%, transparent);
       background: color-mix(in srgb, var(--accent) 8%, var(--panel));
     }
-    .duration-row { grid-template-columns: repeat(7, minmax(0, 1fr)); }
+    .duration-row { grid-template-columns: repeat(8, minmax(0, 1fr)); }
     .duration-row .dur-btn[data-min="custom"] { font-size: 0.72rem; }
     .custom-duration-row {
       display: grid;
@@ -2028,6 +2028,7 @@
         <button class="dur-btn" data-min="15">15m</button>
         <button class="dur-btn" data-min="20">20m</button>
         <button class="dur-btn" data-min="30">30m</button>
+        <button class="dur-btn" data-min="45">45m</button>
         <button class="dur-btn" data-min="infinite">∞</button>
         <button class="dur-btn" data-min="custom">Custom</button>
       </div>
@@ -5231,7 +5232,7 @@
         els.infoSheet.classList.add("hidden");
       }
 
-      const FIXED_DURATIONS = [5, 10, 15, 20, 30];
+      const FIXED_DURATIONS = [5, 10, 15, 20, 30, 45];
 
       function syncDurationControls() {
         els.durationRow.querySelectorAll(".dur-btn").forEach(function (button) {
