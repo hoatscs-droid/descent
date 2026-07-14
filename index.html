@@ -2313,6 +2313,7 @@
         restarting: false,
         audioSessionSet: false,
         mediaActionBusy: false,
+        pendingResume: false,
         lastMediaPositionSyncMs: 0,
         hasShownHeadphonesHint: false,
         customPresets: [],
@@ -2548,7 +2549,7 @@
       function syncMediaSessionPlaybackState(nextState) {
         if (!("mediaSession" in navigator)) return;
         try {
-          navigator.mediaSession.playbackState = nextState || (state.isPlaying ? (state.isPaused ? "paused" : "playing") : "none");
+          navigator.mediaSession.playbackState = nextState || (state.isPlaying ? ((state.isPaused && !state.pendingResume) ? "paused" : "playing") : "none");
         } catch (e) {}
       }
 
@@ -2976,7 +2977,11 @@
       function handleAudioContextStateChange() {
         if (!audio.ctx || !state.isPlaying) return;
         if (audio.ctx.state === "running") {
-          syncMediaSessionPlaybackState(state.isPaused ? "paused" : "playing");
+          if (state.pendingResume && state.isPaused) {
+            completeResume();
+            return;
+          }
+          syncMediaSessionPlaybackState();
           if (!state.isPaused) syncMediaSessionPosition(true);
           return;
         }
@@ -4189,12 +4194,35 @@
           clearMediaSessionPosition();
           return;
         }
+        if (state.pendingResume && state.isPaused && audio.ctx) {
+          if (audio.ctx.state === "running") {
+            completeResume();
+            return;
+          }
+          ensureAudioContext().then(function () {
+            if (!state.pendingResume || !state.isPaused) return;
+            if (audio.ctx && audio.ctx.state === "running") {
+              completeResume();
+            } else {
+              state.pendingResume = false;
+              syncMediaSessionPlaybackState("paused");
+              syncMediaSessionPosition(true);
+              updateTimerDisplayFromElapsed();
+              saveState();
+            }
+          }).catch(function () {});
+          return;
+        }
+        if (!state.isPaused && audio.ctx && (audio.ctx.state === "suspended" || audio.ctx.state === "interrupted")) {
+          handleAudioContextStateChange();
+          return;
+        }
         if (!state.isPaused && !state.sessionIsInfinite && currentRemainingMs() <= 0) {
           onSessionElapsed();
           return;
         }
         updateTimerDisplayFromElapsed();
-        syncMediaSessionPlaybackState(state.isPaused ? "paused" : "playing");
+        syncMediaSessionPlaybackState();
         syncMediaSessionPosition(true);
       }
 
@@ -4210,7 +4238,7 @@
       window.addEventListener("pageshow", reconcileSessionClock);
       window.addEventListener("pagehide", function () {
         if (state.isPlaying) {
-          syncMediaSessionPlaybackState(state.isPaused ? "paused" : "playing");
+          syncMediaSessionPlaybackState();
           syncMediaSessionPosition(true);
         }
       });
@@ -4544,6 +4572,11 @@
       }
 
       async function pauseSession() {
+        if (state.pendingResume) {
+          state.pendingResume = false;
+          syncMediaSessionPlaybackState("paused");
+          syncMediaSessionPosition(true);
+        }
         if (!audio.ctx || !state.isPlaying || state.isPaused) return;
         state.elapsedBeforePauseMs += sessionNowMs() - state.runStartedAtPerfMs;
         state.isPaused = true;
@@ -4574,14 +4607,9 @@
         saveState();
       }
 
-      async function resumeSession() {
+      function completeResume() {
         if (!audio.ctx || !state.isPlaying || !state.isPaused) return;
-        await ensureAudioContext();
-        if (!audio.ctx || audio.ctx.state !== "running") {
-          syncMediaSessionPlaybackState("paused");
-          return;
-        }
-        await acquireWakeLock();
+        state.pendingResume = false;
         state.isPaused = false;
         state.runStartedAtPerfMs = sessionNowMs();
         syncEndAtFromElapsed();
@@ -4602,12 +4630,28 @@
         els.playBtn.textContent = "Stop";
         els.playBtn.classList.add("stop");
         armImmersive();
+        acquireWakeLock();
         saveState();
+      }
+
+      async function resumeSession() {
+        if (!audio.ctx || !state.isPlaying || !state.isPaused) return;
+        await ensureAudioContext();
+        if (!audio.ctx) return;
+        if (audio.ctx.state !== "running") {
+          state.pendingResume = true;
+          syncMediaSessionPlaybackState("playing");
+          syncMediaSessionPosition(true);
+          saveState();
+          return;
+        }
+        completeResume();
       }
 
       async function startSession() {
         hideLandingOverlay();
         state.isPaused = false;
+        state.pendingResume = false;
         state.elapsedBeforePauseMs = 0;
         state.runStartedAtPerfMs = sessionNowMs();
         state.sessionStartedAtPerfMs = state.runStartedAtPerfMs;
@@ -4672,6 +4716,7 @@
       }
 
       async function stopSession() {
+        state.pendingResume = false;
         if (!audio.ctx || !state.isPlaying) {
           state.isPlaying = false;
           state.isPaused = false;

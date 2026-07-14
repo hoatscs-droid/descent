@@ -1,6 +1,6 @@
 "use strict";
 
-const CACHE_NAME = "descent-shell-2026-07-13-3";
+const CACHE_NAME = "descent-shell-2026-07-13-4";
 const APP_SHELL = [
   "./",
   "./index.html",
