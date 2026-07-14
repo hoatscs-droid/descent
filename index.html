@@ -245,7 +245,46 @@
       border-color: color-mix(in srgb, var(--accent) 35%, transparent);
       background: color-mix(in srgb, var(--accent) 8%, var(--panel));
     }
-    .duration-row { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+    .duration-row { grid-template-columns: repeat(7, minmax(0, 1fr)); }
+    .duration-row .dur-btn[data-min="custom"] { font-size: 0.72rem; }
+    .custom-duration-row {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      align-items: end;
+      gap: 8px;
+      padding: 9px 10px;
+      border: 1px solid rgba(255,255,255,0.09);
+      border-radius: 11px;
+      background: rgba(255,255,255,0.025);
+    }
+    .custom-duration-field {
+      display: grid;
+      gap: 5px;
+      color: var(--muted);
+      font-size: 0.72rem;
+    }
+    .custom-duration-field input {
+      width: 100%;
+      min-width: 0;
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 9px;
+      background: var(--card-2);
+      color: var(--text);
+      padding: 8px 10px;
+      font: inherit;
+      font-size: 0.86rem;
+    }
+    .custom-duration-apply {
+      border: 1px solid color-mix(in srgb, var(--accent) 36%, transparent);
+      border-radius: 999px;
+      background: color-mix(in srgb, var(--accent) 10%, transparent);
+      color: var(--text);
+      padding: 8px 12px;
+      font-size: 0.76rem;
+    }
+    @media (max-width: 430px) {
+      .duration-row { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+    }
     #tabGlide {
       position: absolute;
       z-index: 1;
@@ -1990,6 +2029,14 @@
         <button class="dur-btn" data-min="20">20m</button>
         <button class="dur-btn" data-min="30">30m</button>
         <button class="dur-btn" data-min="infinite">∞</button>
+        <button class="dur-btn" data-min="custom">Custom</button>
+      </div>
+      <div class="custom-duration-row hidden" id="customDurationRow">
+        <label class="custom-duration-field" for="customDurationMin">
+          Minutes (1-1440)
+          <input id="customDurationMin" type="number" inputmode="numeric" min="1" max="1440" step="1" value="10">
+        </label>
+        <button class="custom-duration-apply" id="applyCustomDuration" type="button">Apply</button>
       </div>
 
       <div class="session-preferences">
@@ -2150,6 +2197,9 @@
         keepAwake: document.getElementById("keepAwake"),
         immersiveFade: document.getElementById("immersiveFade"),
         durationRow: document.getElementById("durationRow"),
+        customDurationRow: document.getElementById("customDurationRow"),
+        customDurationMin: document.getElementById("customDurationMin"),
+        applyCustomDuration: document.getElementById("applyCustomDuration"),
         sitSwipe: document.getElementById("sitSwipe"),
         sitDots: document.getElementById("sitDots"),
         sitGroupLabel: document.getElementById("sitGroupLabel"),
@@ -2268,6 +2318,7 @@
         editingPresetId: null,
         renamingPresetId: null,
         activeSitPaneIndex: -1,
+        targetSitPaneIndex: -1,
         activeEngine: null,
         tinker: null,
         wakeLock: null
@@ -2297,6 +2348,8 @@
         waveGainDepthB: null,
         waveFilterDepthA: null,
         waveFilterDepthB: null,
+        sessionEndTimer: null,
+        sessionEndToken: 0,
         transitionMarkers: []
       };
 
@@ -2441,7 +2494,7 @@
           const raw = localStorage.getItem("descentState");
           if (!raw) return;
           const s = JSON.parse(raw);
-          if ([5,10,15,20,30].includes(s.durationMin)) state.durationMin = s.durationMin;
+          if (Number.isFinite(s.durationMin) && s.durationMin >= 1 && s.durationMin <= 1440) state.durationMin = Math.round(s.durationMin);
           if (s.durationMode === "infinite" || s.durationMode === "timed") state.durationMode = s.durationMode;
           if (typeof s.masterVol === "number") state.masterVol = Math.max(0, Math.min(1, s.masterVol));
           if (typeof s.keepAwake === "boolean") state.keepAwake = s.keepAwake;
@@ -2494,14 +2547,24 @@
       function syncMediaSessionPlaybackState(nextState) {
         if (!("mediaSession" in navigator)) return;
         try {
-          navigator.mediaSession.playbackState = nextState || (state.isPlaying && !state.isPaused ? "playing" : "paused");
+          navigator.mediaSession.playbackState = nextState || (state.isPlaying ? (state.isPaused ? "paused" : "playing") : "none");
         } catch (e) {}
+      }
+
+      function clearMediaSessionPosition() {
+        if (!("mediaSession" in navigator) || typeof navigator.mediaSession.setPositionState !== "function") return;
+        try { navigator.mediaSession.setPositionState(); } catch (e) {}
+        state.lastMediaPositionSyncMs = 0;
+      }
+
+      function sessionNowMs() {
+        return Date.now();
       }
 
       function currentElapsedMs() {
         if (!state.isPlaying) return state.elapsedBeforePauseMs;
         if (state.isPaused) return state.elapsedBeforePauseMs;
-        return state.elapsedBeforePauseMs + (performance.now() - state.runStartedAtPerfMs);
+        return state.elapsedBeforePauseMs + (sessionNowMs() - state.runStartedAtPerfMs);
       }
 
       function currentRemainingMs() {
@@ -2510,7 +2573,7 @@
       }
 
       function syncEndAtFromElapsed() {
-        state.endAtPerfMs = state.sessionIsInfinite ? 0 : performance.now() + currentRemainingMs();
+        state.endAtPerfMs = state.sessionIsInfinite ? 0 : sessionNowMs() + currentRemainingMs();
       }
 
       function syncBreathAnimation() {
@@ -2554,7 +2617,8 @@
         els.timeReadout.textContent = state.durationMode === "infinite" ? "∞" : formatTime(state.durationMin * 60);
         setJourneyStage(0);
         syncVisualDescentForSelection();
-        syncMediaSessionPlaybackState("paused");
+        syncMediaSessionPlaybackState("none");
+        clearMediaSessionPosition();
       }
 
       function showHeadphonesHintOnce() {
@@ -2592,7 +2656,7 @@
         try {
           navigator.mediaSession.setPositionState({
             duration: duration,
-            playbackRate: state.isPaused ? 0 : 1,
+            playbackRate: 1,
             position: elapsed
           });
         } catch (e) {}
@@ -2608,7 +2672,8 @@
             state.mediaActionBusy = false;
             syncMediaSessionMetadata();
             syncMediaSessionPlaybackState();
-            syncMediaSessionPosition(true);
+            if (state.isPlaying) syncMediaSessionPosition(true);
+            else clearMediaSessionPosition();
           });
       }
 
@@ -2625,20 +2690,16 @@
               } else if (!state.isPlaying) {
                 await startSession();
               }
-              syncMediaSessionPlaybackState("playing");
-              syncMediaSessionPosition(true);
             });
           }],
           ["pause", function () {
             runMediaAction(async function () {
               if (state.isPlaying && !state.isPaused) await pauseSession();
-              syncMediaSessionPlaybackState("paused");
             });
           }],
           ["stop", function () {
             runMediaAction(async function () {
               if (state.isPlaying) await stopSession();
-              syncMediaSessionPlaybackState("paused");
             });
           }]
         ].forEach(function (entry) {
@@ -2911,6 +2972,32 @@
         return { modGain, depthAmp, lfo };
       }
 
+      function handleAudioContextStateChange() {
+        if (!audio.ctx || !state.isPlaying) return;
+        if (audio.ctx.state === "running") {
+          syncMediaSessionPlaybackState(state.isPaused ? "paused" : "playing");
+          if (!state.isPaused) syncMediaSessionPosition(true);
+          return;
+        }
+        if ((audio.ctx.state === "suspended" || audio.ctx.state === "interrupted") && !state.isPaused) {
+          state.elapsedBeforePauseMs += Math.max(0, sessionNowMs() - state.runStartedAtPerfMs);
+          state.isPaused = true;
+          syncEndAtFromElapsed();
+          cancelAudioSessionEnd();
+          cancelAnimationFrame(state.timerRaf);
+          state.timerRaf = 0;
+          stopBackgroundTicker();
+          clearImmersive();
+          syncBreathAnimation();
+          updateTimerDisplayFromElapsed();
+          els.playBtn.textContent = "Play";
+          els.playBtn.classList.remove("stop");
+          syncMediaSessionPlaybackState("paused");
+          syncMediaSessionPosition(true);
+          saveState();
+        }
+      }
+
       function rampBeat(ctx, left, right, carrier, newBeat, atTime, glide) {
         left.frequency.linearRampToValueAtTime(carrier - newBeat / 2, atTime + glide);
         right.frequency.linearRampToValueAtTime(carrier + newBeat / 2, atTime + glide);
@@ -2930,6 +3017,7 @@
           audio.limiter.release.value = 0.25;
           audio.masterSession.gain.value = 0;
           audio.masterSession.connect(audio.userMaster).connect(audio.limiter).connect(audio.ctx.destination);
+          audio.ctx.addEventListener("statechange", handleAudioContextStateChange);
         }
         try {
           if (navigator.audioSession) navigator.audioSession.type = "playback";
@@ -3985,6 +4073,7 @@
       }
 
       function finishStoppedState() {
+        cancelAudioSessionEnd();
         state.isPlaying = false;
         state.isPaused = false;
         state.sessionIsInfinite = false;
@@ -4000,7 +4089,8 @@
         syncBreathAnimation();
         els.playBtn.textContent = "Play";
         els.playBtn.classList.remove("stop");
-        syncMediaSessionPlaybackState("paused");
+        syncMediaSessionPlaybackState("none");
+        clearMediaSessionPosition();
         releaseWakeLock();
       }
 
@@ -4092,16 +4182,35 @@
         }
       }
 
+      function reconcileSessionClock() {
+        if (!state.isPlaying) {
+          syncMediaSessionPlaybackState("none");
+          clearMediaSessionPosition();
+          return;
+        }
+        if (!state.isPaused && !state.sessionIsInfinite && currentRemainingMs() <= 0) {
+          onSessionElapsed();
+          return;
+        }
+        updateTimerDisplayFromElapsed();
+        syncMediaSessionPlaybackState(state.isPaused ? "paused" : "playing");
+        syncMediaSessionPosition(true);
+      }
+
       document.addEventListener("visibilitychange", function () {
         if (document.visibilityState === "visible") {
           try {
             if (navigator.audioSession) navigator.audioSession.type = "playback";
           } catch (e) {}
           if (state.keepAwake && state.isPlaying && !state.isPaused) acquireWakeLock();
-          if (state.isPlaying && !state.isPaused) {
-            syncMediaSessionPlaybackState("playing");
-            syncMediaSessionPosition(true);
-          }
+        }
+        reconcileSessionClock();
+      });
+      window.addEventListener("pageshow", reconcileSessionClock);
+      window.addEventListener("pagehide", function () {
+        if (state.isPlaying) {
+          syncMediaSessionPlaybackState(state.isPaused ? "paused" : "playing");
+          syncMediaSessionPosition(true);
         }
       });
 
@@ -4199,12 +4308,50 @@
         }
       }
 
+      function cancelAudioSessionEnd() {
+        audio.sessionEndToken += 1;
+        if (!audio.sessionEndTimer) return;
+        try {
+          audio.sessionEndTimer.onended = null;
+          audio.sessionEndTimer.stop();
+          audio.sessionEndTimer.disconnect();
+        } catch (e) {}
+        audio.sessionEndTimer = null;
+      }
+
+      function scheduleAudioSessionEnd() {
+        cancelAudioSessionEnd();
+        if (!audio.ctx || !state.isPlaying || state.isPaused || state.sessionIsInfinite) return;
+        const remainingSec = currentRemainingMs() / 1000;
+        if (remainingSec <= 0) {
+          onSessionElapsed();
+          return;
+        }
+        const token = audio.sessionEndToken;
+        const timer = audio.ctx.createOscillator();
+        const silent = audio.ctx.createGain();
+        silent.gain.value = 0;
+        timer.connect(silent).connect(audio.ctx.destination);
+        timer.onended = function () {
+          if (token !== audio.sessionEndToken || timer !== audio.sessionEndTimer) return;
+          audio.sessionEndTimer = null;
+          if (state.isPlaying && !state.isPaused && !state.sessionIsInfinite) {
+            if (currentRemainingMs() <= 1000) onSessionElapsed();
+            else scheduleAudioSessionEnd();
+          }
+        };
+        audio.sessionEndTimer = timer;
+        timer.start();
+        timer.stop(audio.ctx.currentTime + remainingSec);
+      }
+
       function isActiveSleepPreset() {
         if (state.mode !== "sit") return false;
         return getSitGroup(getSitPreset(state.selectedSit)) === "sleep";
       }
 
       function finishElapsedSessionState() {
+        cancelAudioSessionEnd();
         state.isPlaying = false;
         state.isPaused = false;
         state.sessionIsInfinite = false;
@@ -4221,7 +4368,8 @@
         els.timeReadout.textContent = "00:00";
         els.playBtn.textContent = "Play";
         els.playBtn.classList.remove("stop");
-        syncMediaSessionPlaybackState("paused");
+        syncMediaSessionPlaybackState("none");
+        clearMediaSessionPosition();
         releaseWakeLock();
         saveState();
       }
@@ -4396,9 +4544,10 @@
 
       async function pauseSession() {
         if (!audio.ctx || !state.isPlaying || state.isPaused) return;
-        state.elapsedBeforePauseMs += performance.now() - state.runStartedAtPerfMs;
+        state.elapsedBeforePauseMs += sessionNowMs() - state.runStartedAtPerfMs;
         state.isPaused = true;
         syncEndAtFromElapsed();
+        cancelAudioSessionEnd();
 
         const now = audio.ctx.currentTime;
         audio.masterSession.gain.cancelScheduledValues(now);
@@ -4427,9 +4576,13 @@
       async function resumeSession() {
         if (!audio.ctx || !state.isPlaying || !state.isPaused) return;
         await ensureAudioContext();
+        if (!audio.ctx || audio.ctx.state !== "running") {
+          syncMediaSessionPlaybackState("paused");
+          return;
+        }
         await acquireWakeLock();
         state.isPaused = false;
-        state.runStartedAtPerfMs = performance.now();
+        state.runStartedAtPerfMs = sessionNowMs();
         syncEndAtFromElapsed();
         syncMediaSessionPlaybackState("playing");
         syncMediaSessionPosition(true);
@@ -4444,6 +4597,7 @@
         stopBackgroundTicker();
         state.timerRaf = requestAnimationFrame(updateCountdownLoop);
         if (!state.sessionIsInfinite) startBackgroundTicker();
+        scheduleAudioSessionEnd();
         els.playBtn.textContent = "Stop";
         els.playBtn.classList.add("stop");
         armImmersive();
@@ -4454,9 +4608,16 @@
         hideLandingOverlay();
         state.isPaused = false;
         state.elapsedBeforePauseMs = 0;
-        state.runStartedAtPerfMs = performance.now();
+        state.runStartedAtPerfMs = sessionNowMs();
         state.sessionStartedAtPerfMs = state.runStartedAtPerfMs;
         await ensureAudioContext();
+        if (!audio.ctx || audio.ctx.state !== "running") {
+          state.isPlaying = false;
+          state.isPaused = false;
+          syncMediaSessionPlaybackState("none");
+          clearMediaSessionPosition();
+          return;
+        }
         await acquireWakeLock();
         stopCurrentSources(audio.ctx.currentTime + 0.01);
         stopTinkerGraph(audio.ctx.currentTime + 0.01);
@@ -4481,7 +4642,7 @@
         const totalSec = state.durationMin * 60;
         const journeySec = state.durationMode === "infinite" ? DEFAULTS.infiniteJourneySec : totalSec;
         state.sessionIsInfinite = state.durationMode === "infinite";
-        state.runStartedAtPerfMs = performance.now();
+        state.runStartedAtPerfMs = sessionNowMs();
         state.sessionStartedAtPerfMs = state.runStartedAtPerfMs;
         state.endAtPerfMs = state.sessionIsInfinite ? 0 : state.runStartedAtPerfMs + totalSec * 1000;
         els.timeReadout.textContent = state.sessionIsInfinite ? "00:00" : formatTime(totalSec);
@@ -4499,6 +4660,7 @@
         }
 
         state.isPlaying = true;
+        scheduleAudioSessionEnd();
         syncBreathAnimation();
         els.playBtn.textContent = "Stop";
         els.playBtn.classList.add("stop");
@@ -4509,7 +4671,15 @@
       }
 
       async function stopSession() {
-        if (!audio.ctx || !state.isPlaying) return;
+        if (!audio.ctx || !state.isPlaying) {
+          state.isPlaying = false;
+          state.isPaused = false;
+          cancelAudioSessionEnd();
+          syncMediaSessionPlaybackState("none");
+          clearMediaSessionPosition();
+          return;
+        }
+        cancelAudioSessionEnd();
         if (state.isPaused && audio.ctx.state === "suspended") {
           try { await audio.ctx.resume(); } catch (e) {}
         }
@@ -4538,7 +4708,8 @@
         syncBreathAnimation();
         els.playBtn.textContent = "Play";
         els.playBtn.classList.remove("stop");
-        syncMediaSessionPlaybackState("paused");
+        syncMediaSessionPlaybackState("none");
+        clearMediaSessionPosition();
         await releaseWakeLock();
       }
 
@@ -4796,6 +4967,8 @@
         els.durationRow.querySelectorAll(".dur-btn").forEach(function (button) {
           button.classList.toggle("active", Number(button.dataset.min) === DEFAULTS.durationMin);
         });
+        els.customDurationRow.classList.add("hidden");
+        els.customDurationMin.value = String(DEFAULTS.durationMin);
         els.timeReadout.textContent = formatTime(DEFAULTS.durationMin * 60);
         els.playBtn.textContent = "Play";
         els.playBtn.classList.remove("stop");
@@ -4976,7 +5149,18 @@
         }
       }
 
+      let sitPagerTargetTimer = 0;
+
+      function lockSitPagerTarget(index, duration) {
+        window.clearTimeout(sitPagerTargetTimer);
+        state.targetSitPaneIndex = index;
+        sitPagerTargetTimer = window.setTimeout(function () {
+          if (state.targetSitPaneIndex === index) state.targetSitPaneIndex = -1;
+        }, duration || 700);
+      }
+
       function setActiveSitPane(index) {
+        if (state.targetSitPaneIndex >= 0 && index !== state.targetSitPaneIndex) return;
         els.sitDots.querySelectorAll(".sit-category").forEach(function (category) {
           const active = Number(category.dataset.pane) === index;
           category.classList.toggle("active", active);
@@ -4996,9 +5180,10 @@
         const panes = Array.from(swipeEl.querySelectorAll(".tinker-pane"));
         if ("IntersectionObserver" in window) {
           const observer = new IntersectionObserver(function (entries) {
-            entries.forEach(function (entry) {
-              if (entry.isIntersecting) setActive(Number(entry.target.dataset.pane));
-            });
+            const visible = entries.filter(function (entry) { return entry.isIntersecting; });
+            if (!visible.length) return;
+            visible.sort(function (a, b) { return b.intersectionRatio - a.intersectionRatio; });
+            setActive(Number(visible[0].target.dataset.pane));
           }, { root: swipeEl, threshold: 0.6 });
           panes.forEach(function (pane) { observer.observe(pane); });
         } else {
@@ -5015,12 +5200,17 @@
 
       function setupSitPager() {
         setupSwipePager(els.sitSwipe, setActiveSitPane);
+        els.sitSwipe.addEventListener("pointerdown", function () {
+          window.clearTimeout(sitPagerTargetTimer);
+          state.targetSitPaneIndex = -1;
+        }, { passive: true });
       }
 
       function scrollSitToSelected(behavior) {
         const p = getSitPreset(state.selectedSit);
         const paneIndex = getSitGroupIndex(getSitGroup(p));
         const pane = els.sitSwipe.querySelector('.tinker-pane[data-pane="' + paneIndex + '"]');
+        lockSitPagerTarget(paneIndex, behavior === "smooth" ? 700 : 80);
         setActiveSitPane(paneIndex);
         if (!pane) return;
         window.requestAnimationFrame(function () {
@@ -5039,6 +5229,58 @@
 
       function closeInfoPanel() {
         els.infoSheet.classList.add("hidden");
+      }
+
+      const FIXED_DURATIONS = [5, 10, 15, 20, 30];
+
+      function syncDurationControls() {
+        els.durationRow.querySelectorAll(".dur-btn").forEach(function (button) {
+          let active = false;
+          if (state.durationMode === "infinite") {
+            active = button.dataset.min === "infinite";
+          } else if (button.dataset.min === "custom") {
+            active = !FIXED_DURATIONS.includes(state.durationMin);
+          } else {
+            active = Number(button.dataset.min) === state.durationMin;
+          }
+          button.classList.toggle("active", active);
+        });
+      }
+
+      function applyDuration(mode, minutes) {
+        if (mode === "infinite") {
+          state.durationMode = "infinite";
+        } else {
+          const nextMinutes = Math.round(Number(minutes));
+          if (!Number.isFinite(nextMinutes) || nextMinutes < 1 || nextMinutes > 1440) return false;
+          state.durationMode = "timed";
+          state.durationMin = nextMinutes;
+        }
+        syncDurationControls();
+        if (state.isPlaying) {
+          if (state.durationMode === "infinite") {
+            state.sessionIsInfinite = true;
+            state.endAtPerfMs = 0;
+            stopBackgroundTicker();
+            cancelAudioSessionEnd();
+          } else {
+            state.sessionIsInfinite = false;
+            syncEndAtFromElapsed();
+            if (currentRemainingMs() <= 0) {
+              onSessionElapsed();
+              return true;
+            }
+            if (!state.isPaused) startBackgroundTicker();
+            scheduleAudioSessionEnd();
+          }
+          updateTimerDisplayFromElapsed();
+          syncMediaSessionPosition(true);
+        } else {
+          els.timeReadout.textContent = state.durationMode === "infinite" ? "∞" : formatTime(state.durationMin * 60);
+          clearMediaSessionPosition();
+        }
+        saveState();
+        return true;
       }
 
       function bindUi() {
@@ -5111,33 +5353,34 @@
         els.durationRow.addEventListener("click", function (e) {
           const b = e.target.closest(".dur-btn");
           if (!b) return;
-          if (b.dataset.min === "infinite") {
-            state.durationMode = "infinite";
-          } else {
-            state.durationMode = "timed";
-            state.durationMin = Number(b.dataset.min);
-          }
-          els.durationRow.querySelectorAll(".dur-btn").forEach(function (x) { x.classList.toggle("active", x === b); });
-          if (state.isPlaying) {
-            if (state.durationMode === "infinite") {
-              state.sessionIsInfinite = true;
-              state.endAtPerfMs = 0;
-              stopBackgroundTicker();
-            } else {
-              state.sessionIsInfinite = false;
-              syncEndAtFromElapsed();
-              if (currentElapsedMs() >= state.durationMin * 60 * 1000) {
-                onSessionElapsed();
-                return;
-              }
-              if (!state.isPaused) startBackgroundTicker();
+          if (b.dataset.min === "custom") {
+            els.customDurationRow.classList.toggle("hidden");
+            if (!els.customDurationRow.classList.contains("hidden")) {
+              els.customDurationMin.value = String(state.durationMin);
+              window.setTimeout(function () { els.customDurationMin.focus(); }, 0);
             }
-            updateTimerDisplayFromElapsed();
-            syncMediaSessionPosition(true);
-          } else {
-            els.timeReadout.textContent = state.durationMode === "infinite" ? "∞" : formatTime(state.durationMin * 60);
+            return;
           }
-          saveState();
+          els.customDurationRow.classList.add("hidden");
+          applyDuration(b.dataset.min === "infinite" ? "infinite" : "timed", b.dataset.min);
+        });
+
+        function submitCustomDuration() {
+          if (!applyDuration("timed", els.customDurationMin.value)) {
+            els.customDurationMin.focus();
+            return;
+          }
+          els.customDurationMin.value = String(state.durationMin);
+          els.customDurationRow.classList.add("hidden");
+        }
+        els.applyCustomDuration.addEventListener("click", submitCustomDuration);
+        els.customDurationMin.addEventListener("keydown", function (e) {
+          if (e.key === "Enter") {
+            e.preventDefault();
+            submitCustomDuration();
+          } else if (e.key === "Escape") {
+            els.customDurationRow.classList.add("hidden");
+          }
         });
 
         els.journeyOn.addEventListener("change", function () {
@@ -5232,8 +5475,9 @@
           if (!category) return;
           const paneIndex = Number(category.dataset.pane);
           const pane = els.sitSwipe.querySelector('.tinker-pane[data-pane="' + paneIndex + '"]');
-          if (pane) els.sitSwipe.scrollTo({ left: pane.offsetLeft, behavior: "smooth" });
+          lockSitPagerTarget(paneIndex, 700);
           setActiveSitPane(paneIndex);
+          if (pane) els.sitSwipe.scrollTo({ left: pane.offsetLeft, behavior: "smooth" });
         });
 
         els.resetMode.addEventListener("click", resetAllModes);
@@ -5288,10 +5532,8 @@
         els.masterVal.textContent = state.masterVol.toFixed(2);
         els.keepAwake.checked = state.keepAwake;
         els.immersiveFade.checked = state.immersiveFade;
-        els.durationRow.querySelectorAll(".dur-btn").forEach(function (b) {
-          const isActive = state.durationMode === "infinite" ? b.dataset.min === "infinite" : Number(b.dataset.min) === state.durationMin;
-          b.classList.toggle("active", isActive);
-        });
+        syncDurationControls();
+        els.customDurationMin.value = String(state.durationMin);
         els.timeReadout.textContent = state.durationMode === "infinite" ? "∞" : formatTime(state.durationMin * 60);
         els.sitNoiseLevelVal.textContent = Number(els.sitNoiseLevel.value).toFixed(2);
         els.exploreNoiseLevelVal.textContent = Number(els.exploreNoiseLevel.value).toFixed(2);
