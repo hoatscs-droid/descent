@@ -2,7 +2,7 @@
 
 All notable changes to Descent are documented here.
 
-## 2026-07-09 — Current release
+## 2026-07-09: Current release
 
 ### Added
 

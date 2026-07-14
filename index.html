@@ -669,9 +669,13 @@
     }
     .mine-tile {
       display: grid;
-      gap: 10px;
+      grid-template-columns: minmax(0, 1fr) auto;
+      align-items: center;
+      gap: 4px 12px;
       position: relative;
       background: #191920;
+      padding: 11px 13px 11px 16px;
+      min-height: 0;
     }
     .sit-shell {
       gap: 0;
@@ -682,6 +686,12 @@
     .sit-header, .sit-controls, .sit-mine {
       margin-left: 14px;
       margin-right: 14px;
+    }
+    .sit-mine {
+      display: grid;
+      gap: 10px;
+      padding-top: 18px;
+      padding-bottom: 20px;
     }
     .sit-header {
       position: relative;
@@ -803,11 +813,15 @@
       padding: 0;
       text-align: left;
       font-weight: 600;
-      font-size: 1rem;
+      font-size: 0.9rem;
+      line-height: 1.2;
     }
     .mine-actions {
       display: flex;
-      gap: 10px;
+      grid-column: 2;
+      grid-row: 1 / span 2;
+      justify-content: flex-end;
+      gap: 5px;
       flex-wrap: wrap;
     }
     .mine-actions button, .rename-actions button, #cancelEdit {
@@ -815,12 +829,25 @@
       background: rgba(255,255,255,0.03);
       color: var(--muted);
       border-radius: 999px;
-      padding: 6px 10px;
-      font-size: 0.78rem;
+      padding: 4px 8px;
+      font-size: 0.7rem;
       transition: background 220ms ease, border-color 220ms ease, color 220ms ease, transform 150ms ease, box-shadow 220ms ease;
     }
     .mine-actions button, .rename-actions button {
       background: rgba(255,255,255,0.05);
+    }
+    .mine-tile > span:not(.tag) {
+      grid-column: 1;
+      color: var(--muted);
+      font-size: 0.69rem;
+      line-height: 1.2;
+    }
+    .mine-tile .tag {
+      display: none;
+    }
+    @media (max-width: 430px) {
+      .mine-actions { gap: 4px; }
+      .mine-actions button { padding: 4px 7px; }
     }
     .tag {
       display: inline-flex;
@@ -1279,6 +1306,45 @@
       color: var(--accent);
       letter-spacing: 0.02em;
     }
+    .control-value-tools {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      margin-left: auto;
+    }
+    .parameter-reset {
+      display: grid;
+      place-items: center;
+      width: 20px;
+      height: 20px;
+      padding: 0;
+      border: 1px solid rgba(255,255,255,0.10);
+      border-radius: 50%;
+      background: transparent;
+      color: rgba(166,161,154,0.62);
+      font-size: 0.72rem;
+      line-height: 1;
+      transition: color 180ms ease, border-color 180ms ease, background 180ms ease, transform 150ms ease;
+    }
+    .parameter-reset:hover,
+    .parameter-reset:focus-visible {
+      color: var(--accent);
+      border-color: color-mix(in srgb, var(--accent) 46%, transparent);
+      background: color-mix(in srgb, var(--accent) 8%, transparent);
+    }
+    .parameter-reset:active { transform: rotate(-35deg) scale(0.9); }
+    .session-preferences {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .session-preferences .compact-option {
+      color: var(--muted);
+      font-size: 0.74rem;
+      opacity: 0.82;
+    }
     .precision-stepper-row {
       display: flex;
       align-items: center;
@@ -1713,7 +1779,7 @@
             <div class="brain-map-title">
               <span>Beat map</span>
               <span class="brain-map-tools">
-                <span>0.5–45 Hz orientation</span>
+                <span>0.5-45 Hz orientation</span>
                 <button class="brain-map-info-btn" id="brainMapInfoBtn" type="button" aria-expanded="false" aria-controls="brainMapInfo" aria-label="Explain the beat map">
                   <img src="icons/info.svg" alt="">
                 </button>
@@ -1732,7 +1798,7 @@
             </div>
             <div class="brain-map-info hidden" id="brainMapInfo">
               <p>This map plots the frequency difference between Osc A and Osc B. For example, 147 Hz in one ear and 153 Hz in the other creates a 6 Hz binaural beat, shown in the Theta range.</p>
-              <p>The ranges are approximate orientation bands: Delta 0.5–4 Hz, Theta 4–8 Hz, Alpha 8–13 Hz, Beta 13–30 Hz, and Gamma 30–45 Hz. Headphones are needed for binaural left/right separation.</p>
+              <p>The ranges are approximate orientation bands: Delta 0.5-4 Hz, Theta 4-8 Hz, Alpha 8-13 Hz, Beta 13-30 Hz, and Gamma 30-45 Hz. Headphones are needed for binaural left/right separation.</p>
               <p>Carrier pitch, waveform, noise, and pulse change how the sound feels, but they do not move this marker unless they change the Osc A/B difference. The labels are a reference, not a guarantee that listening will produce a particular brain state.</p>
             </div>
           </div>
@@ -1926,9 +1992,12 @@
         <button class="dur-btn" data-min="infinite">∞</button>
       </div>
 
-      <div class="row">
-        <span>Keep screen awake</span>
-        <label><input type="checkbox" id="keepAwake" checked> On</label>
+      <div class="session-preferences">
+        <div class="row">
+          <span>Keep screen awake</span>
+          <label><input type="checkbox" id="keepAwake" checked> On</label>
+        </div>
+        <label class="compact-option"><input type="checkbox" id="immersiveFade" checked> Auto-dim interface</label>
       </div>
 
       <button class="play" id="playBtn">Play</button>
@@ -1948,7 +2017,7 @@
     <div class="info-card">
       <button class="close-info" id="closeInfo" type="button">Close</button>
       <div class="info-panel hidden" id="sciencePanel" data-info-panel>
-        <h2 id="scienceTitle">What this is, honestly</h2>
+        <h2 id="scienceTitle">The science behind Descent</h2>
         <p>Descent is a tool for sitting quietly with focused attention. That practice, on its own, has moderate and repeatable evidence for easing anxiety and low mood. The sound is here to help you settle and stay. It is not the active ingredient. You are.</p>
         <h3>About the tones</h3>
         <p>Each stage plays a binaural beat: two slightly different tones, one per ear, create a third soft pulse you perceive inside your head. Some people find lower-frequency beats calming, and there is modest evidence for anxiety reduction, especially in the lower ranges.</p>
@@ -2042,6 +2111,8 @@
         masterVol: 0.65,
         durationMin: 10,
         durationMode: "timed",
+        keepAwake: true,
+        immersiveFade: true,
         infiniteJourneySec: 20 * 60,
         sitPreset: "calm",
         explorePreset: "f3",
@@ -2077,6 +2148,7 @@
         masterVolume: document.getElementById("masterVolume"),
         masterVal: document.getElementById("masterVal"),
         keepAwake: document.getElementById("keepAwake"),
+        immersiveFade: document.getElementById("immersiveFade"),
         durationRow: document.getElementById("durationRow"),
         sitSwipe: document.getElementById("sitSwipe"),
         sitDots: document.getElementById("sitDots"),
@@ -2176,6 +2248,7 @@
         durationMode: "timed",
         masterVol: 0.65,
         keepAwake: true,
+        immersiveFade: true,
         isPlaying: false,
         isPaused: false,
         sessionIsInfinite: false,
@@ -2347,6 +2420,7 @@
           durationMode: state.durationMode,
           masterVol: state.masterVol,
           keepAwake: state.keepAwake,
+          immersiveFade: state.immersiveFade,
           customPresets: state.customPresets,
           tinker: state.tinker
         };
@@ -2371,6 +2445,7 @@
           if (s.durationMode === "infinite" || s.durationMode === "timed") state.durationMode = s.durationMode;
           if (typeof s.masterVol === "number") state.masterVol = Math.max(0, Math.min(1, s.masterVol));
           if (typeof s.keepAwake === "boolean") state.keepAwake = s.keepAwake;
+          if (typeof s.immersiveFade === "boolean") state.immersiveFade = s.immersiveFade;
           state.customPresets = Array.isArray(s.customPresets) ? s.customPresets.map(normalizePreset).filter(Boolean) : [];
         } catch (e) {
           state.customPresets = [];
@@ -2454,12 +2529,12 @@
 
       function armImmersive() {
         clearImmersive();
-        if (state.isPlaying && !state.isPaused && !prefersReducedMotion()) {
+        if (state.isPlaying && !state.isPaused && state.immersiveFade && !prefersReducedMotion()) {
           immTimer = window.setTimeout(function () {
-            if (state.isPlaying && !state.isPaused && !prefersReducedMotion()) {
+            if (state.isPlaying && !state.isPaused && state.immersiveFade && !prefersReducedMotion()) {
               document.body.classList.add("immersive");
             }
-          }, 5000);
+          }, 15000);
         }
       }
 
@@ -3287,6 +3362,27 @@
         ];
       }
 
+      function defaultTinkerValueForControl(id) {
+        const values = {
+          oscAPitch: DEFAULTS.tinker.oscA.pitch,
+          oscALowpass: DEFAULTS.tinker.oscA.lowpass,
+          oscAPan: DEFAULTS.tinker.oscA.pan,
+          oscAVolume: DEFAULTS.tinker.oscA.volume,
+          oscBPitch: DEFAULTS.tinker.oscB.pitch,
+          oscBLowpass: DEFAULTS.tinker.oscB.lowpass,
+          oscBPan: DEFAULTS.tinker.oscB.pan,
+          oscBVolume: DEFAULTS.tinker.oscB.volume,
+          noiseWidth: DEFAULTS.tinker.noise.width,
+          noiseLowpass: DEFAULTS.tinker.noise.lowpass,
+          noiseLevel: DEFAULTS.tinker.noise.level,
+          pulseToneDepth: DEFAULTS.tinker.pulse.toneDepth,
+          pulseToneRate: DEFAULTS.tinker.pulse.toneRate,
+          pulseNoiseDepth: DEFAULTS.tinker.pulse.noiseDepth,
+          pulseNoiseRate: DEFAULTS.tinker.pulse.noiseRate
+        };
+        return values[id];
+      }
+
       function realValueFromTinkerSlider(meta) {
         if (meta.scale === "log") return logSliderToValue(meta.slider.value, meta.min, meta.max);
         if (meta.scale === "pulse") return sliderToHz(meta.slider.value);
@@ -3447,6 +3543,22 @@
           readout.setAttribute("role", "button");
           readout.setAttribute("aria-label", "Edit exact value for " + meta.label);
           readout.title = "Tap to type exact value";
+          if (!readout.parentNode.classList.contains("control-value-tools")) {
+            const tools = document.createElement("span");
+            const reset = document.createElement("button");
+            tools.className = "control-value-tools";
+            reset.type = "button";
+            reset.className = "parameter-reset";
+            reset.textContent = "↶";
+            reset.title = "Reset " + meta.label;
+            reset.setAttribute("aria-label", "Reset " + meta.label + " to default");
+            readout.parentNode.insertBefore(tools, readout);
+            tools.appendChild(readout);
+            tools.appendChild(reset);
+            reset.addEventListener("click", function () {
+              applyTinkerPrecisionValue(meta, defaultTinkerValueForControl(meta.id));
+            });
+          }
           if (!readout.dataset.precisionBound) {
             readout.addEventListener("click", function () { beginTinkerExactEntry(meta); });
             readout.addEventListener("keydown", function (e) {
@@ -3985,7 +4097,7 @@
           try {
             if (navigator.audioSession) navigator.audioSession.type = "playback";
           } catch (e) {}
-          if (state.wakeLock !== null && state.keepAwake) acquireWakeLock();
+          if (state.keepAwake && state.isPlaying && !state.isPaused) acquireWakeLock();
           if (state.isPlaying && !state.isPaused) {
             syncMediaSessionPlaybackState("playing");
             syncMediaSessionPosition(true);
@@ -4654,6 +4766,49 @@
         setTinkerControlsFromPreset(cloneTinkerDefaults());
       }
 
+      async function resetAllModes() {
+        await stopSession();
+
+        state.restarting = false;
+        state.durationMin = DEFAULTS.durationMin;
+        state.durationMode = DEFAULTS.durationMode;
+        state.keepAwake = DEFAULTS.keepAwake;
+        state.immersiveFade = DEFAULTS.immersiveFade;
+        state.sessionIsInfinite = false;
+        state.elapsedBeforePauseMs = 0;
+        state.runStartedAtPerfMs = 0;
+        state.sessionStartedAtPerfMs = 0;
+        state.endAtPerfMs = 0;
+
+        els.sitNoiseOn.checked = true;
+        syncSitNoiseForPreset(getSitPreset(state.selectedSit));
+        els.exploreNoiseOn.checked = true;
+        els.exploreNoiseLevel.value = "0.10";
+        els.exploreNoiseLevelVal.textContent = "0.10";
+        els.journeyOn.checked = false;
+        els.journeyMeta.classList.add("hidden");
+        setJourneyStage(0);
+        els.keepAwake.checked = DEFAULTS.keepAwake;
+        els.immersiveFade.checked = DEFAULTS.immersiveFade;
+        setMasterVolume(DEFAULTS.masterVol);
+        setTinkerControlsFromPreset(cloneTinkerDefaults());
+
+        els.durationRow.querySelectorAll(".dur-btn").forEach(function (button) {
+          button.classList.toggle("active", Number(button.dataset.min) === DEFAULTS.durationMin);
+        });
+        els.timeReadout.textContent = formatTime(DEFAULTS.durationMin * 60);
+        els.playBtn.textContent = "Play";
+        els.playBtn.classList.remove("stop");
+
+        renderSitTiles();
+        renderMineTiles();
+        renderExploreTiles();
+        syncVisualDescentForSelection();
+        syncMediaSessionMetadata();
+        syncMediaSessionPosition(true);
+        saveState();
+      }
+
       function selectSitPreset(p) {
         state.selectedSit = p.id;
         syncSitNoiseForPreset(p);
@@ -4661,7 +4816,6 @@
         renderMineTiles();
         if (SIT_PRESETS.some(function (x) { return x.id === p.id; })) scrollSitToSelected("smooth");
         syncVisualDescentForSelection();
-        if (state.isPlaying || state.isPaused) { restartSessionFresh(); }
         syncMediaSessionMetadata();
         saveState();
       }
@@ -4870,7 +5024,7 @@
         setActiveSitPane(paneIndex);
         if (!pane) return;
         window.requestAnimationFrame(function () {
-          pane.scrollIntoView({ behavior: behavior || "auto", inline: "center", block: "nearest" });
+          els.sitSwipe.scrollTo({ left: pane.offsetLeft, behavior: behavior || "auto" });
         });
       }
 
@@ -4902,11 +5056,18 @@
           if (e.key === "Escape" && !els.infoSheet.classList.contains("hidden")) closeInfoPanel();
         });
 
-        if (els.app) {
-          els.app.addEventListener("pointerdown", function () {
-            armImmersive();
-          }, { passive: true });
+        let lastImmersiveWake = 0;
+        function wakeImmersive() {
+          if (!state.isPlaying || state.isPaused) return;
+          const now = performance.now();
+          if (now - lastImmersiveWake < 200) return;
+          lastImmersiveWake = now;
+          armImmersive();
         }
+        document.addEventListener("pointermove", wakeImmersive, { passive: true });
+        document.addEventListener("pointerdown", wakeImmersive, { passive: true });
+        document.addEventListener("touchstart", wakeImmersive, { passive: true });
+        document.addEventListener("keydown", wakeImmersive);
 
         els.orbHit.addEventListener("click", async function () {
           showHeadphonesHintOnce();
@@ -4937,6 +5098,13 @@
           } else if (state.isPlaying && !state.isPaused) {
             await acquireWakeLock();
           }
+          saveState();
+        });
+
+        els.immersiveFade.addEventListener("change", function () {
+          state.immersiveFade = els.immersiveFade.checked;
+          if (state.immersiveFade) armImmersive();
+          else clearImmersive();
           saveState();
         });
 
@@ -5056,7 +5224,7 @@
           if (!btn) return;
           const paneIndex = Number(btn.dataset.pane);
           const pane = els.tinkerSwipe.querySelector('.tinker-pane[data-pane="' + paneIndex + '"]');
-          if (pane) pane.scrollIntoView({ behavior: "smooth", inline: "center", block: "nearest" });
+          if (pane) els.tinkerSwipe.scrollTo({ left: pane.offsetLeft, behavior: "smooth" });
           setActiveTinkerPane(paneIndex);
         });
         els.sitDots.addEventListener("click", function (e) {
@@ -5064,16 +5232,12 @@
           if (!category) return;
           const paneIndex = Number(category.dataset.pane);
           const pane = els.sitSwipe.querySelector('.tinker-pane[data-pane="' + paneIndex + '"]');
-          if (pane) pane.scrollIntoView({ behavior: "smooth", inline: "center", block: "nearest" });
+          if (pane) els.sitSwipe.scrollTo({ left: pane.offsetLeft, behavior: "smooth" });
           setActiveSitPane(paneIndex);
         });
 
-        els.resetMode.addEventListener("click", function () {
-          if (state.mode === "sit") resetSitMode();
-          else if (state.mode === "explore") resetExploreMode();
-          else resetTinkerMode();
-        });
-        els.resetTinkerInline.addEventListener("click", resetTinkerMode);
+        els.resetMode.addEventListener("click", resetAllModes);
+        els.resetTinkerInline.addEventListener("click", resetAllModes);
         els.brainMapInfoBtn.addEventListener("click", function () {
           const expanded = els.brainMapInfoBtn.getAttribute("aria-expanded") === "true";
           els.brainMapInfoBtn.setAttribute("aria-expanded", expanded ? "false" : "true");
@@ -5123,6 +5287,7 @@
         els.masterVolume.value = String(state.masterVol);
         els.masterVal.textContent = state.masterVol.toFixed(2);
         els.keepAwake.checked = state.keepAwake;
+        els.immersiveFade.checked = state.immersiveFade;
         els.durationRow.querySelectorAll(".dur-btn").forEach(function (b) {
           const isActive = state.durationMode === "infinite" ? b.dataset.min === "infinite" : Number(b.dataset.min) === state.durationMin;
           b.classList.toggle("active", isActive);

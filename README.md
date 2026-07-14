@@ -12,9 +12,9 @@ Everything runs locally in the browser. Descent has no backend, sends no persona
 
 Choose from three intention-led groups:
 
-- **Clarity** — Focus, Flow, Lift, and Sharp
-- **Daytime** — Calm, Settle, Ground, and Breathe
-- **Deep Sleep** — Drift, Shore, Deep, and Tide
+- **Clarity:** Focus, Flow, Lift, and Sharp
+- **Daytime:** Calm, Settle, Ground, and Breathe
+- **Deep Sleep:** Drift, Shore, Deep, and Tide
 
 Each preset configures the binaural difference, carrier, noise bed, and pulse behavior. Some sleep presets use wave textures and work without headphones; binaural presets require stereo separation.
 
@@ -78,6 +78,8 @@ Binaural beats are perceived when the left and right ears receive slightly diffe
 Descent is a meditation and sound-design tool, not a medical device. It does not diagnose, treat, cure, or prevent any condition, and it does not guarantee brainwave entrainment or a specific state of consciousness. Stop listening if the sound feels uncomfortable or destabilizing.
 
 Descent is an independent project. It draws broad creative inspiration from descent-style contemplative practices, including the Monroe Institute's Gateway framework, but is not affiliated with or endorsed by the Monroe Institute and does not reproduce its recordings or protocols.
+
+Sources to verify independently: Goyal et al., JAMA Internal Medicine, 2014 (meditation meta-analysis); Garcia-Argibay et al., Psychological Research, 2019 (binaural beats meta-analysis); Ingendoh et al., PLOS One, 2023 (brainwave entrainment review).
 
 ## Technology
 
